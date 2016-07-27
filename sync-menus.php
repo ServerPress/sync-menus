@@ -14,8 +14,8 @@ images, manuals, cascading stylesheets and included JavaScript are NOT GPL.
 
 if (!class_exists('WPSiteSync_Menus')) {
 	/*
-	 * @package WPSiteSync_Pull
-	 * @author Dave Jesch
+	 * @package WPSiteSync_Menus
+	 * @author WPSiteSync
 	 */
 
 	class WPSiteSync_Menus
@@ -67,6 +67,15 @@ if (!class_exists('WPSiteSync_Menus')) {
 				$this->load_class('menusadmin');
 				SyncMenusAdmin::get_instance();
 			}
+
+			WPSiteSync_Menus::get_instance()->load_class('menusapirequest');
+
+			add_filter('spectrom_sync_api_request_action', array('SyncMenusApiRequest', 'api_request'), 20, 3); // called by SyncApiRequest
+			add_filter('spectrom_sync_api', array('SyncMenusApiRequest', 'api_controller_request'), 10, 3); // called by SyncApiController
+			add_action('spectrom_sync_api_request_response', array('SyncMenusApiRequest', 'api_response'), 10, 3); // called by SyncApiRequest->api()
+
+			add_filter('spectrom_sync_error_code_to_text', array('SyncMenusApiRequest', 'filter_error_codes'), 10, 2);
+			add_filter('spectrom_sync_notice_code_to_text', array('SSyncMenusApiRequest', 'filter_notice_codes'), 10, 2);
 		}
 
 		/**
@@ -101,6 +110,16 @@ if (!class_exists('WPSiteSync_Menus')) {
 		{
 			$ret = plugin_dir_url(__FILE__) . 'assets/' . $ref;
 			return $ret;
+		}
+
+		/**
+		 * Return license
+		 *
+		 * @return null
+		 */
+		public function get_license()
+		{
+			return $this->_license;
 		}
 
 		/**
