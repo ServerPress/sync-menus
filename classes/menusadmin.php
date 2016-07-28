@@ -13,6 +13,8 @@ class SyncMenusAdmin
 	{
 		add_action('admin_enqueue_scripts', array(&$this, 'admin_enqueue_scripts'));
 		add_action('admin_print_scripts-nav-menus.php', array(&$this, 'print_hidden_div'));
+
+		add_action('spectrom_sync_ajax_operation', array(&$this, 'check_ajax_query'), 10, 3);
 	}
 
 	/**
@@ -57,28 +59,57 @@ class SyncMenusAdmin
 		?>
 		<div id="sync-menu-ui" style="display:none">
 			<div class="sync-menu-contents">
-				<button id="sync-menus-push" class="button button-primary sync-button" type="button" onclick="wpsitesynccontent.push(4)" title="<?php esc_html_e('Push this Menu to the Target site', 'wpsitesync-menus'); ?>">
+				<button class="sync-menus-push button button-primary sync-button" type="button" title="<?php esc_html_e('Push this Menu to the Target site', 'wpsitesync-menus'); ?>">
 					<span class="sync-button-icon dashicons dashicons-migrate"></span>
 					<?php esc_html_e('Push to Target', 'wpsitesync-menus'); ?>
 				</button>
 				<?php if (class_exists('WPSiteSync_Pull') && WPSiteSync_Menus::get_instance()->get_license()->check_license('sync_pull', WPSiteSync_Pull::PLUGIN_KEY, WPSiteSync_Pull::PLUGIN_NAME)) :?>
-				<button id="sync-menus-pull" class="button button-secondary sync-button" type="button" onclick="wpsitesynccontent.pull.action(4)" title="<?php esc_html_e('Pull this Menu from the Target site', 'wpsitesync-menus'); ?>">
+				<button class="sync-menus-pull button button-secondary sync-button" type="button" title="<?php esc_html_e('Pull this Menu from the Target site', 'wpsitesync-menus'); ?>">
 					<span class="sync-button-icon sync-button-icon-rotate dashicons dashicons-migrate"></span>
 					<?php esc_html_e('Pull from Target', 'wpsitesync-menus'); ?>
 				</button>
 				<?php endif; ?>
-				<?php wp_nonce_field('sync-menus', '_sync_menus_nonce'); ?>
+				<?php wp_nonce_field('sync-menus', '_sync_nonce'); ?>
+				<div class="sync-menu-loading-indicator" style="display: none;">
+					<?php esc_html_e('Synchronizing Menu...', 'wpsitesync-menus'); ?>
+				</div>
+				<div class="sync-menu-failure-msg">
+					<?php esc_html_e('Failed to Sync Menu.', 'wpsitesync-menus'); ?>
+					<span class="sync-menu-fail-detail"></span>
+				</div>
+				<div class="sync-menu-success-msg"></div>
 			</div>
-			<div class="sync-menu-loading-indicator" style="display: none;">
-				<?php esc_html_e('Synchronizing Menu...', 'wpsitesync-menus'); ?>
-			</div>
-			<div id="sync-menu-failure-msg">
-				<?php esc_html_e('Failed to Sync Menu.', 'wpsitesync-menus'); ?>
-				<span id="sync-menu-fail-detail"></span>
-			</div>
-			<div id="sync-menu-success-msg"></div>
 		</div>
 		<?php
+	}
+
+	/**
+	 * Checks if the current ajax operation is for this plugin
+	 *
+	 * @param  boolean $found Return TRUE or FALSE if the operation is found
+	 * @param  string $operation The type of operation requested
+	 * @param  SyncApiResponse $resp The response to be sent
+	 *
+	 * @return boolean Return TRUE if the current ajax operation is for this plugin, otherwise return $found
+	 */
+	public function check_ajax_query($found, $operation, SyncApiResponse $resp)
+	{
+		SyncDebug::log(__METHOD__ . '() operation="' . $operation . '"');
+
+		$license = new SyncLicensing();
+		// @todo enable
+		//if (!$license->check_license('sync_menus', WPSiteSync_Menus::PLUGIN_KEY, WPSiteSync_Menus::PLUGIN_NAME))
+			// return $found;
+
+		if ('pushmenu' === $operation) {
+			SyncDebug::log(' - post=' . var_export($_POST, TRUE));
+
+			$ajax = WPSiteSync_Menus::get_instance()->load_class('menusajaxrequest', TRUE);
+			$ajax->push_menu($resp);
+			$found = TRUE;
+		}
+
+		return $found;
 	}
 }
 
