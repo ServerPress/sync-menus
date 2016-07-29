@@ -90,7 +90,6 @@ class SyncMenusApiRequest
 			SyncDebug::log(__METHOD__ . '() args=' . var_export($args, TRUE));
 
 			$push_data = array();
-			$taxonomies = array();
 			$menu_name = $args['menu_name'];
 			$menu_args = array(
 				'numberofposts' => -1,
@@ -98,23 +97,17 @@ class SyncMenusApiRequest
 
 			$menu_data = wp_get_nav_menu_items($menu_name, $menu_args);
 
-			// @todo if menu_data false? (no menu items)
-			// @todo don't need?
-			//foreach ($menu_data as $idx => $menu_item) {
-				//$meta = get_post_meta($menu_item->ID);
-				//$taxonomies[$menu_item->ID] = $meta;
-			//}
-
 			$push_data['menu_items'] = $menu_data;
-			// @todo don't need?
-			// $push_data['taxonomies'] = $taxonomies;
 
-			// @todo menu location
-			/*
-			 * The menu location is stored in the wp_options table under the ‘theme_mods_{themeslug}’ key,
-			 * and the ‘nav_menu_locations’ setting. The setting contains a list of the theme locations and
-			 * the taxonomy id that is associated with that location.
-			 */
+			// Get menu locations
+			$menu_object = wp_get_nav_menu_object($menu_name);
+			$menu_id = $menu_object->term_id;
+			$menu_locations = get_nav_menu_locations();
+
+			if (!empty($menu_locations) && in_array($menu_id, $menu_locations)) {
+				$locations = array_keys($menu_locations, $menu_id);
+				$push_data['menu_locations'] = $locations;
+			}
 
 			SyncDebug::log(__METHOD__ . '() push_data=' . var_export($push_data, TRUE));
 
@@ -163,13 +156,9 @@ class SyncMenusApiRequest
 			if (!$menu_exists) {
 				$menu_id = wp_create_nav_menu($menu_name);
 				SyncDebug::log('created menu');
-				$current_menu = wp_get_nav_menu_object($menu_id);
 			} else {
 				$menu_id = $menu_exists->term_id;
-				$current_menu = $menu_exists;
 			}
-
-			//SyncDebug::log(__METHOD__ . '() current menu object: ' . var_export($current_menu, TRUE));
 
 			$menu_args = array(
 				'numberofposts' => -1,
@@ -302,7 +291,20 @@ class SyncMenusApiRequest
 				}
 			}
 
-			// @todo set location if needed - has_nav_menu( string $location ) return bool
+			// Remove existing locations for the menu
+			$locations = get_nav_menu_locations();
+			foreach ($locations as $key => $value) {
+				if ($menu_id === $value){
+					unset($locations[$key]);
+				}
+			}
+			if (array_key_exists('menu_locations', $push_data)) {;
+				foreach ($push_data['menu_locations'] as $location) {
+					$locations[$location] = $menu_id;
+				}
+			}
+			// Set menu location
+			set_theme_mod('nav_menu_locations', $locations);
 
 			$return = TRUE; // tell the SyncApiController that the request was handled
 		}
