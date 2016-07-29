@@ -99,13 +99,15 @@ class SyncMenusApiRequest
 			$menu_data = wp_get_nav_menu_items($menu_name, $menu_args);
 
 			// @todo if menu_data false? (no menu items)
-			foreach ($menu_data as $idx => $menu_item) {
-				$meta = get_post_meta($menu_item->ID);
-				$taxonomies[$menu_item->ID] = $meta;
-			}
+			// @todo don't need?
+			//foreach ($menu_data as $idx => $menu_item) {
+				//$meta = get_post_meta($menu_item->ID);
+				//$taxonomies[$menu_item->ID] = $meta;
+			//}
 
 			$push_data['menu_items'] = $menu_data;
-			$push_data['taxonomies'] = $taxonomies;
+			// @todo don't need?
+			// $push_data['taxonomies'] = $taxonomies;
 
 			// @todo menu location
 			/*
@@ -141,30 +143,166 @@ class SyncMenusApiRequest
 		// return $found;
 
 		if ('pushmenu' === $action) {
-//			$input = new SyncInput();
-//			$source_post_id = $input->post_int('post_id', 0);
-//
-//			// check api parameters
-//			if (0 === $source_post_id) {
-//				$this->load_class('pullapirequest');
-//				$response->error_code(SyncPullApiRequest::ERROR_TARGET_POST_NOT_FOUND);
-//				return TRUE;            // return, signaling that the API request was processed
-//			}
-//
-//			// build up post information to be returned via API
-//			$model = new SyncModel();
-//			$post_data = get_post($source_post_id, OBJECT);
-//
-//			$response->set('post_data', $post_data);        // add all the post information to the ApiResponse object
-//			$response->set('site_key', SyncOptions::get('site_key'));
-//
-//			// if post_author provided, also give their name
-//			if (isset($post_data->post_author)) {
-//				$author = abs($post_data->post_author);
-//				$user = get_user_by('id', $author);
-//				if (FALSE !== $user)
-//					$response->set('username', $user->user_login);
-//			}
+			$input = new SyncInput();
+			$menu_name = $input->post('menu_name', 0);
+
+			// check api parameters
+			if (0 === $menu_name) {
+				$this->load_class('pullapirequest');
+				$response->error_code(SyncMenusApiRequest::ERROR_TARGET_MENU_NOT_FOUND);
+				return TRUE;            // return, signaling that the API request was processed
+			}
+
+			$push_data = $input->post_raw('push_data', array());
+			SyncDebug::log(__METHOD__ . '() found push_data information: ' . var_export($push_data, TRUE));
+
+			// Check if menu exists
+			$menu_exists = wp_get_nav_menu_object($menu_name);
+
+			// If menu doesn't exist, create it
+			if (!$menu_exists) {
+				$menu_id = wp_create_nav_menu($menu_name);
+				SyncDebug::log('created menu');
+				$current_menu = wp_get_nav_menu_object($menu_id);
+			} else {
+				$menu_id = $menu_exists->term_id;
+				$current_menu = $menu_exists;
+			}
+
+			//SyncDebug::log(__METHOD__ . '() current menu object: ' . var_export($current_menu, TRUE));
+
+			$menu_args = array(
+				'numberofposts' => -1,
+			);
+			$current_menu_items = wp_get_nav_menu_items($menu_id, $menu_args);
+
+			SyncDebug::log(__METHOD__ . '() current menu items: ' . var_export($current_menu_items, TRUE));
+
+			// Get titles
+			$push_titles = wp_list_pluck($push_data['menu_items'], 'title', 'db_id');
+
+			/*
+			Menu items: create, update, or delete
+			All taxonomy, menu items (wp_posts), and postmeta data on the Target need to be updated.
+			*/
+
+			if (false !== $current_menu_items && !empty($current_menu_items)) {
+				foreach ($current_menu_items as $item) {
+
+					SyncDebug::log(__METHOD__ . '() item title: ' . var_export($item->title, TRUE));
+
+					$item_exists = array_search($item->title, $push_titles);
+
+					SyncDebug::log(__METHOD__ . '() item exists: ' . var_export($item_exists, TRUE));
+
+					// If the current item doesn't match a title in the push data, delete it
+					if (FALSE === $item_exists) {
+						wp_delete_post($item->db_id);
+						SyncDebug::log(__METHOD__ . '() item deleted: ' . var_export($item_exists, TRUE));
+						continue;
+					}
+
+					// Get push item key
+					$push_key = FALSE;
+					foreach ($push_data['menu_items'] as $menu_key => $inner) {
+						if (!isset($inner['title'])) continue;
+						if ($inner['title'] == $item->title) {
+							$push_key = $menu_key;
+						}
+					}
+
+					if (FALSE !== $push_key) {
+						$item_args = array(
+							'menu-item-title' => $push_data['menu_items'][$push_key]['title'],
+							'menu-item-classes' => implode(' ', $push_data['menu_items'][$push_key]['classes']),
+							'menu-item-url' => $push_data['menu_items'][$push_key]['url'],
+							'menu-item-status' => $push_data['menu_items'][$push_key]['post_status'],
+							'menu-item-db-id' => $push_data['menu_items'][$push_key]['db_id'],
+							'menu-item-object-id' => $push_data['menu_items'][$push_key]['object_id'],
+							'menu-item-object' => $push_data['menu_items'][$push_key]['object'],
+							'menu-item-parent-id' => $push_data['menu_items'][$push_key]['menu_item_parent'],
+							'menu-item-position' => $push_data['menu_items'][$push_key]['menu_order'],
+							'menu-item-type' => $push_data['menu_items'][$push_key]['type'],
+							'menu-item-description' => $push_data['menu_items'][$push_key]['description'],
+							'menu-item-attr-title' => $push_data['menu_items'][$push_key]['attr_title'],
+							'menu-item-target' => $push_data['menu_items'][$push_key]['target'],
+							'menu-item-xfn' => $push_data['menu_items'][$push_key]['xfn'],
+						);
+
+						// Update the item
+						$i = wp_update_nav_menu_item($menu_id, $item->db_id, $item_args);
+
+						SyncDebug::log(__METHOD__ . '() item updated: ' . var_export($i, TRUE));
+					}
+				}
+
+				// Retrieve current menu items again
+				$current_titles = wp_list_pluck($current_menu_items, 'title', 'db_id');
+				$new_items = array_diff( $push_titles, $current_titles);
+
+				foreach ($new_items as $key => $item ) {
+
+					// Get push menu item key
+					$push_key = FALSE;
+					foreach ($push_data['menu_items'] as $menu_key => $inner) {
+						if (!isset($inner['title'])) continue;
+						if ($inner['title'] == $item) {
+							$push_key = $menu_key;
+						}
+					}
+
+					if (FALSE !== $push_key && NULL !== $push_key) {
+						$item_args = array(
+							'menu-item-title' => $push_data['menu_items'][$push_key]['title'],
+							'menu-item-classes' => implode(' ', $push_data['menu_items'][$push_key]['classes']),
+							'menu-item-url' => $push_data['menu_items'][$push_key]['url'],
+							'menu-item-status' => $push_data['menu_items'][$push_key]['post_status'],
+							'menu-item-db-id' => $push_data['menu_items'][$push_key]['db_id'],
+							'menu-item-object-id' => $push_data['menu_items'][$push_key]['object_id'],
+							'menu-item-object' => $push_data['menu_items'][$push_key]['object'],
+							'menu-item-parent-id' => $push_data['menu_items'][$push_key]['menu_item_parent'],
+							'menu-item-position' => $push_data['menu_items'][$push_key]['menu_order'],
+							'menu-item-type' => $push_data['menu_items'][$push_key]['type'],
+							'menu-item-description' => $push_data['menu_items'][$push_key]['description'],
+							'menu-item-attr-title' => $push_data['menu_items'][$push_key]['attr_title'],
+							'menu-item-target' => $push_data['menu_items'][$push_key]['target'],
+							'menu-item-xfn' => $push_data['menu_items'][$push_key]['xfn'],
+						);
+
+						$i = wp_update_nav_menu_item($menu_id, 0, $item_args);
+
+						SyncDebug::log(__METHOD__ . '() item added: ' . var_export($i, TRUE));
+					}
+				}
+
+			} else {
+
+				// Add all push menu items
+				foreach ($push_data['menu_items'] as $item) {
+					$item_args = array(
+						'menu-item-title' => $item['title'],
+						'menu-item-classes' => $item['classes'],
+						'menu-item-url' => $item['url'],
+						'menu-item-status' => $item['post_status'],
+						'menu-item-db-id' => $item['db_id'],
+						'menu-item-object-id' => $item['object_id'],
+						'menu-item-object' => $item['object'],
+						'menu-item-parent-id' => $item['menu_item_parent'],
+						'menu-item-position' => $item['menu_order'],
+						'menu-item-type' => $item['type'],
+						'menu-item-description' => $item['description'],
+						'menu-item-attr-title' => $item['attr_title'],
+						'menu-item-target' => $item['target'],
+						'menu-item-xfn' => $item['xfn'],
+					);
+
+					$i = wp_update_nav_menu_item($menu_id, 0, $item_args);
+
+					SyncDebug::log(__METHOD__ . '() item added: ' . var_export($i, TRUE));
+				}
+			}
+
+			// @todo set location if needed - has_nav_menu( string $location ) return bool
 
 			$return = TRUE; // tell the SyncApiController that the request was handled
 		}
@@ -198,6 +336,7 @@ class SyncMenusApiRequest
 			SyncDebug::log(__METHOD__ . '() api response body=' . var_export($api_response, TRUE));
 
 			if (NULL !== $api_response) {
+				// @todo what to do here?
 //				$save_post = $_POST;
 //
 //				// convert the pull data into an array
@@ -217,7 +356,6 @@ class SyncMenusApiRequest
 //				$_POST['target_post_id'] = abs($_REQUEST['post_id']);    // used by SyncApiController->push() to identify target post
 //###					$_POST['post_data'] = $pull_data;
 //				$_POST['action'] = 'push';
-//				// TODO: set up headers
 //
 //				$args = array(
 //					'action' => 'push',
@@ -247,7 +385,7 @@ class SyncMenusApiRequest
 //				} else {
 //				}
 			}
-		//else SyncDebug::log(__METHOD__.'():' . __LINE__ . ' - no response body');
+		else SyncDebug::log(__METHOD__.'():' . __LINE__ . ' - no response body');
 		}
 	}
 }

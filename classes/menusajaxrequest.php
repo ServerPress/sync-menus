@@ -17,12 +17,11 @@ class SyncMenusAjaxRequest
 		return self::$_instance;
 	}
 
-
 	/**
 	 * Push menu ajax request
 	 *
 	 * @since 1.0.0
-	 * @param SyncApiResponse $resp The response object after the API requesst has been made
+	 * @param SyncApiResponse $resp The response object after the API request has been made
 	 * @return void
 	 */
 	public function push_menu($resp)
