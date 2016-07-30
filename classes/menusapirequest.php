@@ -175,6 +175,7 @@ class SyncMenusApiRequest
 			All taxonomy, menu items (wp_posts), and postmeta data on the Target need to be updated.
 			*/
 
+			// If there are existing menu items, process them first
 			if (false !== $current_menu_items && !empty($current_menu_items)) {
 				foreach ($current_menu_items as $item) {
 
@@ -201,15 +202,44 @@ class SyncMenusApiRequest
 					}
 
 					if (FALSE !== $push_key) {
+
+						// Check if item has a parent
+						if ('0' !== $push_data['menu_items'][$push_key]['menu_item_parent']) {
+							$parent = $push_data['menu_items'][absint($push_key)]['menu_item_parent'];
+
+							// Get parent id from title
+							$items = wp_get_nav_menu_items($menu_id);
+							$new_parent_id = 0;
+
+							if (FALSE !== $items && !empty($items)) {
+
+								// Get parent push item key
+								$parent_push_key = FALSE;
+								foreach ($push_data['menu_items'] as $menu_key => $inner) {
+									if (!isset($inner['db_id'])) continue;
+									if ($inner['db_id'] == $parent) {
+										$parent_push_key = $menu_key;
+									}
+								}
+
+								if (FALSE !== $parent_push_key) {
+									foreach ($items as $i) {
+										if ($i->title === $push_data['menu_items'][$parent_push_key]['title']) {
+											$new_parent_id = $i->ID;
+											break;
+										}
+									}
+								}
+							}
+						}
+
 						$item_args = array(
 							'menu-item-title' => $push_data['menu_items'][$push_key]['title'],
 							'menu-item-classes' => implode(' ', $push_data['menu_items'][$push_key]['classes']),
 							'menu-item-url' => $push_data['menu_items'][$push_key]['url'],
 							'menu-item-status' => $push_data['menu_items'][$push_key]['post_status'],
-							'menu-item-db-id' => $push_data['menu_items'][$push_key]['db_id'],
-							'menu-item-object-id' => $push_data['menu_items'][$push_key]['object_id'],
 							'menu-item-object' => $push_data['menu_items'][$push_key]['object'],
-							'menu-item-parent-id' => $push_data['menu_items'][$push_key]['menu_item_parent'],
+							'menu-item-parent-id' => $new_parent_id,
 							'menu-item-position' => $push_data['menu_items'][$push_key]['menu_order'],
 							'menu-item-type' => $push_data['menu_items'][$push_key]['type'],
 							'menu-item-description' => $push_data['menu_items'][$push_key]['description'],
@@ -229,6 +259,7 @@ class SyncMenusApiRequest
 				$current_titles = wp_list_pluck($current_menu_items, 'title', 'db_id');
 				$new_items = array_diff( $push_titles, $current_titles);
 
+				// Add any new menu items
 				foreach ($new_items as $key => $item ) {
 
 					// Get push menu item key
@@ -241,6 +272,36 @@ class SyncMenusApiRequest
 					}
 
 					if (FALSE !== $push_key && NULL !== $push_key) {
+
+						// Check if item has a parent
+						if ('0' !== $push_data['menu_items'][$push_key]['menu_item_parent']) {
+							$parent = $push_data['menu_items'][absint($push_key)]['menu_item_parent'];
+
+							// Get parent id from title
+							$items = wp_get_nav_menu_items($menu_id);
+							$new_parent_id = 0;
+
+							if (FALSE !== $items && !empty($items)) {
+
+								// Get parent push item key
+								$parent_push_key = FALSE;
+								foreach ($push_data['menu_items'] as $menu_key => $inner) {
+									if (!isset($inner['db_id'])) continue;
+									if ($inner['db_id'] == $parent) {
+										$parent_push_key = $menu_key;
+									}
+								}
+
+								if (FALSE !== $parent_push_key) {
+									foreach ($items as $i) {
+										if ($i->title === $push_data['menu_items'][$parent_push_key]['title']) {
+											$new_parent_id = $i->ID;
+											break;
+										}
+									}
+								}
+							}
+						}
 						$item_args = array(
 							'menu-item-title' => $push_data['menu_items'][$push_key]['title'],
 							'menu-item-classes' => implode(' ', $push_data['menu_items'][$push_key]['classes']),
@@ -249,7 +310,7 @@ class SyncMenusApiRequest
 							'menu-item-db-id' => $push_data['menu_items'][$push_key]['db_id'],
 							'menu-item-object-id' => $push_data['menu_items'][$push_key]['object_id'],
 							'menu-item-object' => $push_data['menu_items'][$push_key]['object'],
-							'menu-item-parent-id' => $push_data['menu_items'][$push_key]['menu_item_parent'],
+							'menu-item-parent-id' => $new_parent_id,
 							'menu-item-position' => $push_data['menu_items'][$push_key]['menu_order'],
 							'menu-item-type' => $push_data['menu_items'][$push_key]['type'],
 							'menu-item-description' => $push_data['menu_items'][$push_key]['description'],
