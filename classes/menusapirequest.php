@@ -167,21 +167,17 @@ class SyncMenusApiRequest
 
 			SyncDebug::log(__METHOD__ . '() current menu items: ' . var_export($current_menu_items, TRUE));
 
-			// Get titles
-			$push_titles = wp_list_pluck($push_data['menu_items'], 'title', 'db_id');
-
-			/*
-			Menu items: create, update, or delete
-			All taxonomy, menu items (wp_posts), and postmeta data on the Target need to be updated.
-			*/
+			// Get post_names
+			$push_slugs = wp_list_pluck($push_data['menu_items'], 'post_name', 'db_id');
 
 			// If there are existing menu items, process them first
-			if (false !== $current_menu_items && !empty($current_menu_items)) {
+			if (FALSE !== $current_menu_items && is_array($current_menu_items) && !empty($current_menu_items)) {
+
 				foreach ($current_menu_items as $item) {
 
-					SyncDebug::log(__METHOD__ . '() item title: ' . var_export($item->title, TRUE));
+					SyncDebug::log(__METHOD__ . '() item slug: ' . var_export($item->post_name, TRUE));
 
-					$item_exists = array_search($item->title, $push_titles);
+					$item_exists = array_search($item->post_name, $push_slugs);
 
 					SyncDebug::log(__METHOD__ . '() item exists: ' . var_export($item_exists, TRUE));
 
@@ -193,134 +189,35 @@ class SyncMenusApiRequest
 					}
 
 					// Get push item key
-					$push_key = FALSE;
-					foreach ($push_data['menu_items'] as $menu_key => $inner) {
-						if (!isset($inner['title'])) continue;
-						if ($inner['title'] == $item->title) {
-							$push_key = $menu_key;
-						}
-					}
+					$push_key = $this->get_menu_item_key($push_data, $item, 'post_name');
 
-					if (FALSE !== $push_key) {
+					if (FALSE !== $push_key && NULL !== $push_key) {
 
-						// Check if item has a parent
-						if ('0' !== $push_data['menu_items'][$push_key]['menu_item_parent']) {
-							$parent = $push_data['menu_items'][absint($push_key)]['menu_item_parent'];
-
-							// Get parent id from title
-							$items = wp_get_nav_menu_items($menu_id);
-							$new_parent_id = 0;
-
-							if (FALSE !== $items && !empty($items)) {
-
-								// Get parent push item key
-								$parent_push_key = FALSE;
-								foreach ($push_data['menu_items'] as $menu_key => $inner) {
-									if (!isset($inner['db_id'])) continue;
-									if ($inner['db_id'] == $parent) {
-										$parent_push_key = $menu_key;
-									}
-								}
-
-								if (FALSE !== $parent_push_key) {
-									foreach ($items as $i) {
-										if ($i->title === $push_data['menu_items'][$parent_push_key]['title']) {
-											$new_parent_id = $i->ID;
-											break;
-										}
-									}
-								}
-							}
-						}
-
-						$item_args = array(
-							'menu-item-title' => $push_data['menu_items'][$push_key]['title'],
-							'menu-item-classes' => implode(' ', $push_data['menu_items'][$push_key]['classes']),
-							'menu-item-url' => $push_data['menu_items'][$push_key]['url'],
-							'menu-item-status' => $push_data['menu_items'][$push_key]['post_status'],
-							'menu-item-object' => $push_data['menu_items'][$push_key]['object'],
-							'menu-item-parent-id' => $new_parent_id,
-							'menu-item-position' => $push_data['menu_items'][$push_key]['menu_order'],
-							'menu-item-type' => $push_data['menu_items'][$push_key]['type'],
-							'menu-item-description' => $push_data['menu_items'][$push_key]['description'],
-							'menu-item-attr-title' => $push_data['menu_items'][$push_key]['attr_title'],
-							'menu-item-target' => $push_data['menu_items'][$push_key]['target'],
-							'menu-item-xfn' => $push_data['menu_items'][$push_key]['xfn'],
-						);
+						$item_args = $this->set_menu_item_args($push_data, $push_key);
 
 						// Update the item
 						$i = wp_update_nav_menu_item($menu_id, $item->db_id, $item_args);
-
+						update_post_meta($i, 'sync_menu_original_id', $push_data['menu_items'][$push_key]['db_id']);
 						SyncDebug::log(__METHOD__ . '() item updated: ' . var_export($i, TRUE));
 					}
 				}
 
 				// Retrieve current menu items again
-				$current_titles = wp_list_pluck($current_menu_items, 'title', 'db_id');
-				$new_items = array_diff( $push_titles, $current_titles);
+				$current_slugs = wp_list_pluck($current_menu_items, 'post_name', 'db_id');
+				$new_items = array_diff( $push_slugs, $current_slugs);
 
 				// Add any new menu items
 				foreach ($new_items as $key => $item ) {
 
 					// Get push menu item key
-					$push_key = FALSE;
-					foreach ($push_data['menu_items'] as $menu_key => $inner) {
-						if (!isset($inner['title'])) continue;
-						if ($inner['title'] == $item) {
-							$push_key = $menu_key;
-						}
-					}
+					$push_key = $this->get_menu_item_key($push_data, $item, 'post_name');
 
 					if (FALSE !== $push_key && NULL !== $push_key) {
 
-						// Check if item has a parent
-						if ('0' !== $push_data['menu_items'][$push_key]['menu_item_parent']) {
-							$parent = $push_data['menu_items'][absint($push_key)]['menu_item_parent'];
-
-							// Get parent id from title
-							$items = wp_get_nav_menu_items($menu_id);
-							$new_parent_id = 0;
-
-							if (FALSE !== $items && !empty($items)) {
-
-								// Get parent push item key
-								$parent_push_key = FALSE;
-								foreach ($push_data['menu_items'] as $menu_key => $inner) {
-									if (!isset($inner['db_id'])) continue;
-									if ($inner['db_id'] == $parent) {
-										$parent_push_key = $menu_key;
-									}
-								}
-
-								if (FALSE !== $parent_push_key) {
-									foreach ($items as $i) {
-										if ($i->title === $push_data['menu_items'][$parent_push_key]['title']) {
-											$new_parent_id = $i->ID;
-											break;
-										}
-									}
-								}
-							}
-						}
-						$item_args = array(
-							'menu-item-title' => $push_data['menu_items'][$push_key]['title'],
-							'menu-item-classes' => implode(' ', $push_data['menu_items'][$push_key]['classes']),
-							'menu-item-url' => $push_data['menu_items'][$push_key]['url'],
-							'menu-item-status' => $push_data['menu_items'][$push_key]['post_status'],
-							'menu-item-db-id' => $push_data['menu_items'][$push_key]['db_id'],
-							'menu-item-object-id' => $push_data['menu_items'][$push_key]['object_id'],
-							'menu-item-object' => $push_data['menu_items'][$push_key]['object'],
-							'menu-item-parent-id' => $new_parent_id,
-							'menu-item-position' => $push_data['menu_items'][$push_key]['menu_order'],
-							'menu-item-type' => $push_data['menu_items'][$push_key]['type'],
-							'menu-item-description' => $push_data['menu_items'][$push_key]['description'],
-							'menu-item-attr-title' => $push_data['menu_items'][$push_key]['attr_title'],
-							'menu-item-target' => $push_data['menu_items'][$push_key]['target'],
-							'menu-item-xfn' => $push_data['menu_items'][$push_key]['xfn'],
-						);
+						$item_args = $this->set_menu_item_args($push_data, $push_key);
 
 						$i = wp_update_nav_menu_item($menu_id, 0, $item_args);
-
+						update_post_meta($i, 'sync_menu_original_id', $push_data['menu_items'][$push_key]['db_id']);
 						SyncDebug::log(__METHOD__ . '() item added: ' . var_export($i, TRUE));
 					}
 				}
@@ -334,7 +231,6 @@ class SyncMenusApiRequest
 						'menu-item-classes' => $item['classes'],
 						'menu-item-url' => $item['url'],
 						'menu-item-status' => $item['post_status'],
-						'menu-item-db-id' => $item['db_id'],
 						'menu-item-object-id' => $item['object_id'],
 						'menu-item-object' => $item['object'],
 						'menu-item-parent-id' => $item['menu_item_parent'],
@@ -347,10 +243,13 @@ class SyncMenusApiRequest
 					);
 
 					$i = wp_update_nav_menu_item($menu_id, 0, $item_args);
-
+					update_post_meta($i, 'sync_menu_original_id', $item['db_id']);
 					SyncDebug::log(__METHOD__ . '() item added: ' . var_export($i, TRUE));
 				}
 			}
+
+			// Check if any parent_ids need updated
+			$this->set_parent_ids($menu_id);
 
 			// Remove existing locations for the menu
 			$locations = get_nav_menu_locations();
@@ -359,12 +258,13 @@ class SyncMenusApiRequest
 					unset($locations[$key]);
 				}
 			}
-			if (array_key_exists('menu_locations', $push_data)) {;
+
+			// Set menu location
+			if (array_key_exists('menu_locations', $push_data)) {
 				foreach ($push_data['menu_locations'] as $location) {
 					$locations[$location] = $menu_id;
 				}
 			}
-			// Set menu location
 			set_theme_mod('nav_menu_locations', $locations);
 
 			$return = TRUE; // tell the SyncApiController that the request was handled
@@ -449,6 +349,131 @@ class SyncMenusApiRequest
 //				}
 			}
 		else SyncDebug::log(__METHOD__.'():' . __LINE__ . ' - no response body');
+		}
+	}
+
+	/**
+	 * Set menu item args
+	 *
+	 * @since 1.0.0
+	 * @param $push_data
+	 * @param $push_key
+	 * @param $new_parent_id
+	 * @return array
+	 */
+	private function set_menu_item_args($push_data, $push_key, $new_parent_id)
+	{
+		$item_args = array(
+			'menu-item-title' => $push_data['menu_items'][$push_key]['title'],
+			'menu-item-classes' => implode(' ', $push_data['menu_items'][$push_key]['classes']),
+			'menu-item-url' => $push_data['menu_items'][$push_key]['url'],
+			'menu-item-status' => $push_data['menu_items'][$push_key]['post_status'],
+			'menu-item-object' => $push_data['menu_items'][$push_key]['object'],
+			'menu-item-db-id' => $push_data['menu_items'][$push_key]['db_id'],
+			'menu-item-object-id' => $push_data['menu_items'][$push_key]['object_id'],
+			'menu-item-parent-id' => $new_parent_id,
+			'menu-item-position' => $push_data['menu_items'][$push_key]['menu_order'],
+			'menu-item-type' => $push_data['menu_items'][$push_key]['type'],
+			'menu-item-description' => $push_data['menu_items'][$push_key]['description'],
+			'menu-item-attr-title' => $push_data['menu_items'][$push_key]['attr_title'],
+			'menu-item-target' => $push_data['menu_items'][$push_key]['target'],
+			'menu-item-xfn' => $push_data['menu_items'][$push_key]['xfn'],
+		);
+		return $item_args;
+	}
+
+	/**
+	 * Get Menu Item Key
+	 *
+	 * @since 1.0.0
+	 * @param $push_data
+	 * @param $id
+	 * @return array
+	 */
+	private function get_menu_item_key($push_data, $id, $key)
+	{
+		$push_key = FALSE;
+		foreach ($push_data['menu_items'] as $menu_key => $inner) {
+			if ($inner[$key] === $id) {
+				$push_key = $menu_key;
+			}
+		}
+		return $push_key;
+	}
+
+	/**
+	 * Set parent ids
+	 *
+	 * @since 1.0.0
+	 * @param $menu_id
+	 * @return array
+	 */
+	private function set_parent_ids($menu_id)
+	{
+
+		// Get menu items
+		$menu_args = array(
+			'numberofposts' => -1,
+		);
+		$items = wp_get_nav_menu_items($menu_id, $menu_args);
+
+		if (FALSE !== $items && is_array($items) && !empty($items)) {
+
+			foreach ($items as $item) {
+
+				if ('0' !== $item->menu_item_parent) {
+
+					SyncDebug::log(__METHOD__ . '() has parent: ' . var_export($item->ID, TRUE));
+					SyncDebug::log(__METHOD__ . '() parent_id: ' . var_export($item->menu_item_parent, TRUE));
+
+					// Find the menu item with that original sync_menu_original_id
+					$args = array(
+						'post_type' => array('nav_menu_item'),
+						'post_status' => array('publish'),
+						'posts_per_page' => '-1',
+						'meta_query' => array(
+							array(
+								'key' => 'sync_menu_original_id',
+								'value' => $item->menu_item_parent,
+								'compare' => '=',
+								'type' => 'NUMERIC',
+							),
+						),
+						'cache_results' => FALSE,
+						'update_post_meta_cache' => FALSE,
+						'update_post_term_cache' => FALSE,
+					);
+
+					$query = new WP_Query($args);
+
+					if ($query->have_posts()) {
+						while ($query->have_posts()) {
+							$query->the_post();
+							$new_parent_id = get_the_ID();
+							$item_args = array(
+								'menu-item-title' => $item->title,
+								'menu-item-classes' => $item->classes,
+								'menu-item-url' => $item->url,
+								'menu-item-status' => $item->post_status,
+								'menu-item-object-id' => $item->object_id,
+								'menu-item-object' => $item->object,
+								'menu-item-parent-id' => $new_parent_id,
+								'menu-item-position' => $item->menu_order,
+								'menu-item-type' => $item->type,
+								'menu-item-description' => $item->description,
+								'menu-item-attr-title' => $item->attr_title,
+								'menu-item-target' => $item->target,
+								'menu-item-xfn' => $item->xfn,
+							);
+							$i = wp_update_nav_menu_item($menu_id, $item->db_id, $item_args);
+							SyncDebug::log(__METHOD__ . '() new parent id: ' . var_export($new_parent_id, TRUE));
+							SyncDebug::log(__METHOD__ . '() updated with parent id: ' . var_export($i, TRUE));
+						}
+					}
+
+					wp_reset_postdata();
+				}
+			}
 		}
 	}
 }
