@@ -121,7 +121,7 @@ WPSiteSyncContent_Menus.prototype.push_menu = function (menu_name)
             console.log('in ajax success callback - response');
             console.log(response);
             if (response.success) {
-                wpsitesynccontent.set_message(jQuery('#sync-msg-pull-complete').text());
+                wpsitesynccontent.set_message(jQuery('#sync-msg-push-complete').text());
             } else if (0 !== response.error_code) {
                 wpsitesynccontent.menus.set_message(response.error_message);
             } else {
@@ -142,6 +142,48 @@ WPSiteSyncContent_Menus.prototype.push_menu = function (menu_name)
 WPSiteSyncContent_Menus.prototype.pull_menu = function (menu_name)
 {
     console.log('PULL' + menu_name);
+
+
+    // Do nothing when in a disabled state
+    if (this.disable || !this.inited)
+        return;
+
+    var data = {
+        action: 'spectrom_sync',
+        operation: 'pullmenu',
+        menu_name: menu_name,
+        _sync_nonce: jQuery('#_sync_nonce').val()
+    };
+
+    // @todo loading indicator
+    // jQuery('.pull-actions').hide();
+    // jQuery('.pull-loading-indicator').show();
+    // wpsitesynccontent.set_message(jQuery('#sync-msg-pull-working').text(), true);
+    // jQuery('#sync-menu-loading-indicator').show();
+
+    jQuery.ajax({
+        type: 'post',
+        async: true, // false,
+        data: data,
+        url: ajaxurl,
+        success: function (response)
+        {
+            console.log('in ajax success callback - response');
+            console.log(response);
+            if (response.success) {
+                wpsitesynccontent.set_message(jQuery('#sync-msg-pull-complete').text());
+                // TODO: reload page
+            } else if (0 !== response.error_code) {
+                wpsitesynccontent.menus.set_message(response.error_message);
+            } else {
+                // TODO: use a dialog box not an alert
+                console.log('Failed to execute API.');
+                //alert('Failed to fetch data.');
+            }
+            //jQuery('.pull-actions').show();
+            //jQuery('.pull-loading-indicator').hide();
+        }
+    });
 };
 
 wpsitesynccontent.menus = new WPSiteSyncContent_Menus();

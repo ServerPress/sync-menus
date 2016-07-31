@@ -72,10 +72,10 @@ if (!class_exists('WPSiteSync_Menus')) {
 
 			add_filter('spectrom_sync_api_request_action', array($api, 'api_request'), 20, 3); // called by SyncApiRequest
 			add_filter('spectrom_sync_api', array($api, 'api_controller_request'), 10, 3); // called by SyncApiController
-			//add_action('spectrom_sync_api_request_response', array($api, 'api_response'), 10, 3); // called by SyncApiRequest->api()
+			add_action('spectrom_sync_api_request_response', array($api, 'api_response'), 10, 3); // called by SyncApiRequest->api()
 
-			//add_filter('spectrom_sync_error_code_to_text', array($api, 'filter_error_codes'), 10, 2);
-			//add_filter('spectrom_sync_notice_code_to_text', array($api, 'filter_notice_codes'), 10, 2);
+			add_filter('spectrom_sync_error_code_to_text', array($api, 'filter_error_codes'), 10, 2);
+			add_filter('spectrom_sync_notice_code_to_text', array($api, 'filter_notice_codes'), 10, 2);
 		}
 
 		/**
