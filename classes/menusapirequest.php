@@ -358,10 +358,9 @@ class SyncMenusApiRequest
 	 * @since 1.0.0
 	 * @param $push_data
 	 * @param $push_key
-	 * @param $new_parent_id
 	 * @return array
 	 */
-	private function set_menu_item_args($push_data, $push_key, $new_parent_id)
+	private function set_menu_item_args($push_data, $push_key)
 	{
 		$item_args = array(
 			'menu-item-title' => $push_data['menu_items'][$push_key]['title'],
@@ -371,7 +370,7 @@ class SyncMenusApiRequest
 			'menu-item-object' => $push_data['menu_items'][$push_key]['object'],
 			'menu-item-db-id' => $push_data['menu_items'][$push_key]['db_id'],
 			'menu-item-object-id' => $push_data['menu_items'][$push_key]['object_id'],
-			'menu-item-parent-id' => $new_parent_id,
+			'menu-item-parent-id' => $push_data['menu_items'][$push_key]['menu_item_parent'],
 			'menu-item-position' => $push_data['menu_items'][$push_key]['menu_order'],
 			'menu-item-type' => $push_data['menu_items'][$push_key]['type'],
 			'menu-item-description' => $push_data['menu_items'][$push_key]['description'],
@@ -421,10 +420,11 @@ class SyncMenusApiRequest
 
 			foreach ($items as $item) {
 
+				SyncDebug::log(__METHOD__ . '() parent_id: ' . var_export($item->menu_item_parent, TRUE));
+
 				if ('0' !== $item->menu_item_parent) {
 
 					SyncDebug::log(__METHOD__ . '() has parent: ' . var_export($item->ID, TRUE));
-					SyncDebug::log(__METHOD__ . '() parent_id: ' . var_export($item->menu_item_parent, TRUE));
 
 					// Find the menu item with that original sync_menu_original_id
 					$args = array(
@@ -435,8 +435,6 @@ class SyncMenusApiRequest
 							array(
 								'key' => 'sync_menu_original_id',
 								'value' => $item->menu_item_parent,
-								'compare' => '=',
-								'type' => 'NUMERIC',
 							),
 						),
 						'cache_results' => FALSE,
