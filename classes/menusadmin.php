@@ -5,6 +5,7 @@
  * @package Sync
  * @author WPSiteSync
  */
+
 class SyncMenusAdmin
 {
 	private static $_instance = NULL;
@@ -43,9 +44,10 @@ class SyncMenusAdmin
 		wp_register_style('sync-menus', WPSiteSync_Menus::get_asset('css/sync-menus.css'), array('sync-admin'), WPSiteSync_Menus::PLUGIN_VERSION);
 		wp_register_script('sync-menus', WPSiteSync_Menus::get_asset('js/sync-menus.js'), array('sync'), WPSiteSync_Menus::PLUGIN_VERSION, TRUE);
 
-		if ('nav-menus.php' === $hook_suffix)
+		if ('nav-menus.php' === $hook_suffix) {
 			wp_enqueue_script('sync-menus');
 			wp_enqueue_style('sync-menus');
+		}
 	}
 
 	/**
@@ -63,21 +65,27 @@ class SyncMenusAdmin
 					<span class="sync-button-icon dashicons dashicons-migrate"></span>
 					<?php esc_html_e('Push to Target', 'wpsitesync-menus'); ?>
 				</button>
-				<?php if (class_exists('WPSiteSync_Pull') && WPSiteSync_Menus::get_instance()->get_license()->check_license('sync_pull', WPSiteSync_Pull::PLUGIN_KEY, WPSiteSync_Pull::PLUGIN_NAME)) :?>
-				<button class="sync-menus-pull button button-secondary sync-button" type="button" title="<?php esc_html_e('Pull this Menu from the Target site', 'wpsitesync-menus'); ?>">
-					<span class="sync-button-icon sync-button-icon-rotate dashicons dashicons-migrate"></span>
-					<?php esc_html_e('Pull from Target', 'wpsitesync-menus'); ?>
-				</button>
+				<?php if (class_exists('WPSiteSync_Pull') && WPSiteSync_Menus::get_instance()->get_license()->check_license('sync_pull', WPSiteSync_Pull::PLUGIN_KEY, WPSiteSync_Pull::PLUGIN_NAME)) : ?>
+					<button class="sync-menus-pull button button-secondary sync-button" type="button" title="<?php esc_html_e('Pull this Menu from the Target site', 'wpsitesync-menus'); ?>">
+						<span class="sync-button-icon sync-button-icon-rotate dashicons dashicons-migrate"></span>
+						<?php esc_html_e('Pull from Target', 'wpsitesync-menus'); ?>
+					</button>
 				<?php endif; ?>
 				<?php wp_nonce_field('sync-menus', '_sync_nonce'); ?>
-				<div class="sync-menu-loading-indicator" style="display: none;">
-					<?php esc_html_e('Synchronizing Menu...', 'wpsitesync-menus'); ?>
+				<div class="sync-menu-msgs" style="display:none">
+					<div class="sync-menu-loading-indicator">
+						<?php esc_html_e('Synchronizing Menu...', 'wpsitesync-menus'); ?>
+					</div>
+					<div class="sync-menu-failure-msg">
+						<?php esc_html_e('Failed to Sync Menu.', 'wpsitesync-menus'); ?>
+						<span class="sync-menu-failure-detail"></span>
+						<span class="sync-menu-failure-api"><?php esc_html_e('API Failure', 'wpsitesync-menus'); ?></span>
+						<span class="sync-menu-failure-unsaved"><?php esc_html_e('Please Save Changes First.', 'wpsitesync-menus'); ?></span>
+					</div>
+					<div class="sync-menu-success-msg">
+						<?php esc_html_e('Successfully Synced Menu.', 'wpsitesync-menus'); ?>
+					</div>
 				</div>
-				<div class="sync-menu-failure-msg">
-					<?php esc_html_e('Failed to Sync Menu.', 'wpsitesync-menus'); ?>
-					<span class="sync-menu-fail-detail"></span>
-				</div>
-				<div class="sync-menu-success-msg"></div>
 			</div>
 		</div>
 		<?php
@@ -99,7 +107,7 @@ class SyncMenusAdmin
 		$license = new SyncLicensing();
 		// @todo enable
 		//if (!$license->check_license('sync_menus', WPSiteSync_Menus::PLUGIN_KEY, WPSiteSync_Menus::PLUGIN_NAME))
-			// return $found;
+		// return $found;
 
 		if ('pushmenu' === $operation) {
 			SyncDebug::log(' - post=' . var_export($_POST, TRUE));

@@ -61,7 +61,7 @@ if (!class_exists('WPSiteSync_Menus')) {
 
 			// @todo enable licensing
 			//if (!$this->_license->check_license('sync_menus', self::PLUGIN_KEY, self::PLUGIN_NAME))
-				//return;
+			//return;
 
 			if (is_admin()) {
 				$this->load_class('menusadmin');

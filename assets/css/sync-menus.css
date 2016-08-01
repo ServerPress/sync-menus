@@ -1,4 +1,16 @@
 .sync-menu-contents {
-	margin-right: 1em;
+	margin-right: 0.5em;
 	float: right;
+}
+
+.sync-menu-msgs {
+	margin: 0.5rem 2px 0.5rem 0;
+	border: 1px solid #dddddd;
+	padding: 5px;
+	position: absolute;
+	top: 3.5em;
+}
+
+.sync-menu-failure-msg {
+	color: red;
 }

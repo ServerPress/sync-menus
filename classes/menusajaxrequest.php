@@ -1,4 +1,10 @@
 <?php
+
+/*
+ * Allows management of menus between the Source and Target sites
+ * @package Sync
+ * @author WPSiteSync
+ */
 class SyncMenusAjaxRequest
 {
 	private static $_instance = NULL;
@@ -28,10 +34,9 @@ class SyncMenusAjaxRequest
 	{
 		$input = new SyncInput();
 
-		// @todo uncomment, remove below: $menu_name = $input->post('menu_name', 0);
-		$menu_name = 0;
+		$menu_name = $input->post('menu_name', 0);
 
-		if (0 === $menu_name ) {
+		if (0 === $menu_name) {
 			// No menu name. Return error message
 			WPSiteSync_Menus::get_instance()->load_class('menusapirequest');
 			$resp->error_code(SyncMenusApiRequest::ERROR_MENU_NOT_FOUND);

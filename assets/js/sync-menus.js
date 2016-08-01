@@ -21,11 +21,21 @@ WPSiteSyncContent_Menus.prototype.init = function ()
 {
     this.inited = true;
 
-    var _self = this;
+    var _self = this,
+        target = document.querySelector('#menu-to-edit'),
+        observer = new MutationObserver(function (mutations)
+        {
+            mutations.forEach(function (mutation)
+            {
+                _self.on_content_change();
+            });
+        });
 
-    // @todo get correct content to watch
-    this.$content = jQuery('#content');
-    this.original_value = this.$content.val();
+    var config = {attributes: true, childList: true, characterData: true}
+
+    observer.observe(target, config);
+
+    this.$content = jQuery('#update-nav-menu');
     this.$content.on('keypress change', function ()
     {
         _self.on_content_change();
@@ -51,6 +61,7 @@ WPSiteSyncContent_Menus.prototype.show = function ()
  */
 WPSiteSyncContent_Menus.prototype.hide_msgs = function ()
 {
+    jQuery('.sync-menu-msgs').hide();
     jQuery('.sync-menu-loading-indicator').hide();
     jQuery('.sync-menu-failure-msg').hide();
     jQuery('.sync-menu-success-msg').hide();
@@ -58,32 +69,42 @@ WPSiteSyncContent_Menus.prototype.hide_msgs = function ()
 
 /**
  * Disables Sync Button every time the content changes.
- * @todo
  */
 WPSiteSyncContent_Menus.prototype.on_content_change = function ()
 {
-    if (this.$content.val() !== this.original_value) {
-        this.disable = true;
-        jQuery('.sync-menus-push, .sync-menus-pull').attr('disabled', true);
-        this.set_message(jQuery('#sync-menu-msg-update-changes').html());
-    } else {
-        this.disable = false;
-        jQuery('.sync-menus-push, .sync-menus-pull').removeAttr('disabled');
-        this.hide_msgs();
-    }
+    //console.log( 'content changed' );
+    this.disable = true;
 };
 
 /**
  * Sets the message area
  * @param {string} msg The HTML contents of the message to be shown.
+ * @param {string} type The type of message to display.
  */
-WPSiteSyncContent_Menus.prototype.set_message = function (msg)
+WPSiteSyncContent_Menus.prototype.set_message = function (type, msg)
 {
     if (!this.inited)
         return;
 
-    jQuery('.sync-menu-fail-detail').html(msg);
-    jQuery('.sync-menu-failure-msg').show();
+    jQuery('.sync-menu-msgs').show();
+    if ('loading' === type) {
+        jQuery('.sync-menu-loading-indicator').show();
+    } else if ('success' === type) {
+        jQuery('.sync-menu-success-msg').show();
+    } else if ('unsaved' === type) {
+        jQuery('.sync-menu-failure-unsaved').show();
+        jQuery('.sync-menu-failure-api').hide();
+        jQuery('.sync-menu-failure-msg').show();
+    } else if ('api' === type) {
+        jQuery('.sync-menu-failure-api').show();
+        jQuery('.sync-menu-failure-unsaved').hide();
+        jQuery('.sync-menu-failure-msg').show();
+    } else {
+        jQuery('.sync-menu-failure-detail').html(msg);
+        jQuery('.sync-menu-failure-api').hide();
+        jQuery('.sync-menu-failure-unsaved').hide();
+        jQuery('.sync-menu-failure-msg').show();
+    }
 };
 
 /**
@@ -92,7 +113,7 @@ WPSiteSyncContent_Menus.prototype.set_message = function (msg)
  */
 WPSiteSyncContent_Menus.prototype.push_menu = function (menu_name)
 {
-    console.log('PUSH' + menu_name);
+    //console.log('PUSH' + menu_name);
 
     // Do nothing when in a disabled state
     if (this.disable || !this.inited)
@@ -105,11 +126,8 @@ WPSiteSyncContent_Menus.prototype.push_menu = function (menu_name)
         _sync_nonce: jQuery('#_sync_nonce').val()
     };
 
-    // @todo loading indicator
-    // jQuery('.pull-actions').hide();
-    // jQuery('.pull-loading-indicator').show();
-    // wpsitesynccontent.set_message(jQuery('#sync-msg-pull-working').text(), true);
-    // jQuery('#sync-menu-loading-indicator').show();
+    wpsitesynccontent.menus.hide_msgs();
+    wpsitesynccontent.menus.set_message('loading');
 
     jQuery.ajax({
         type: 'post',
@@ -118,19 +136,16 @@ WPSiteSyncContent_Menus.prototype.push_menu = function (menu_name)
         url: ajaxurl,
         success: function (response)
         {
-            console.log('in ajax success callback - response');
-            console.log(response);
+            wpsitesynccontent.menus.hide_msgs();
+            //console.log('in ajax success callback - response');
+            //console.log(response);
             if (response.success) {
-                wpsitesynccontent.set_message(jQuery('#sync-msg-push-complete').text());
+                wpsitesynccontent.menus.set_message('success');
             } else if (0 !== response.error_code) {
-                wpsitesynccontent.menus.set_message(response.error_message);
+                wpsitesynccontent.menus.set_message('failure', response.error_message);
             } else {
-                // TODO: use a dialog box not an alert
-                console.log('Failed to execute API.');
-				//alert('Failed to fetch data.');
+                wpsitesynccontent.menus.set_message('api');
             }
-            //jQuery('.pull-actions').show();
-            //jQuery('.pull-loading-indicator').hide();
         }
     });
 };
@@ -141,8 +156,7 @@ WPSiteSyncContent_Menus.prototype.push_menu = function (menu_name)
  */
 WPSiteSyncContent_Menus.prototype.pull_menu = function (menu_name)
 {
-    console.log('PULL' + menu_name);
-
+    //console.log('PULL' + menu_name);
 
     // Do nothing when in a disabled state
     if (this.disable || !this.inited)
@@ -155,11 +169,8 @@ WPSiteSyncContent_Menus.prototype.pull_menu = function (menu_name)
         _sync_nonce: jQuery('#_sync_nonce').val()
     };
 
-    // @todo loading indicator
-    // jQuery('.pull-actions').hide();
-    // jQuery('.pull-loading-indicator').show();
-    // wpsitesynccontent.set_message(jQuery('#sync-msg-pull-working').text(), true);
-    // jQuery('#sync-menu-loading-indicator').show();
+    wpsitesynccontent.menus.hide_msgs();
+    wpsitesynccontent.menus.set_message('loading');
 
     jQuery.ajax({
         type: 'post',
@@ -168,20 +179,17 @@ WPSiteSyncContent_Menus.prototype.pull_menu = function (menu_name)
         url: ajaxurl,
         success: function (response)
         {
-            console.log('in ajax success callback - response');
-            console.log(response);
+            wpsitesynccontent.menus.hide_msgs();
+            // console.log('in ajax success callback - response');
+            // console.log(response);
             if (response.success) {
-                wpsitesynccontent.set_message(jQuery('#sync-msg-pull-complete').text());
-                // TODO: reload page
+                wpsitesynccontent.menus.set_message('success');
+                location.reload();
             } else if (0 !== response.error_code) {
-                wpsitesynccontent.menus.set_message(response.error_message);
+                wpsitesynccontent.menus.set_message('failure', response.error_message);
             } else {
-                // TODO: use a dialog box not an alert
-                console.log('Failed to execute API.');
-                //alert('Failed to fetch data.');
+                wpsitesynccontent.menus.set_message('api');
             }
-            //jQuery('.pull-actions').show();
-            //jQuery('.pull-loading-indicator').hide();
         }
     });
 };
@@ -196,8 +204,13 @@ jQuery(document).ready(function ()
     jQuery('.sync-menu-contents').on('click', '.sync-menus-push, .sync-menus-pull', function ()
     {
         var menu_name = jQuery('#menu-name').val();
-        //@todo if no menu_name, error
-        //@todo if unsaved changes, error
+
+        wpsitesynccontent.menus.hide_msgs();
+
+        if (!menu_name || '' === menu_name || true === wpsitesynccontent.menus.disable) {
+            wpsitesynccontent.menus.set_message('unsaved');
+            return;
+        }
 
         if (jQuery(this).hasClass('sync-menus-pull')) {
             wpsitesynccontent.menus.pull_menu(menu_name);

@@ -1,4 +1,5 @@
 <?php
+
 class SyncMenusApiRequest
 {
 	private static $_instance = NULL;
@@ -181,7 +182,7 @@ class SyncMenusApiRequest
 					}
 
 					// Get push item key
-					$push_key = $this->get_menu_item_key($push_data, $item, 'post_name');
+					$push_key = $this->get_menu_item_key($push_data, $item->post_name, 'post_name');
 
 					if (FALSE !== $push_key && NULL !== $push_key) {
 
@@ -201,10 +202,10 @@ class SyncMenusApiRequest
 
 				// Retrieve current menu items again
 				$current_slugs = wp_list_pluck($current_menu_items, 'post_name', 'db_id');
-				$new_items = array_diff( $push_slugs, $current_slugs);
+				$new_items = array_diff($push_slugs, $current_slugs);
 
 				// Add any new menu items
-				foreach ($new_items as $key => $item ) {
+				foreach ($new_items as $key => $item) {
 
 					// Get push menu item key
 					$push_key = $this->get_menu_item_key($push_data, $item, 'post_name');
@@ -230,7 +231,7 @@ class SyncMenusApiRequest
 				foreach ($push_data['menu_items'] as $item) {
 					$item_args = array(
 						'menu-item-title' => $item['title'],
-						'menu-item-classes' => $item['classes'],
+						'menu-item-classes' => implode(' ', $item['classes'] ),
 						'menu-item-url' => $item['url'],
 						'menu-item-status' => $item['post_status'],
 						'menu-item-object-id' => $item['object_id'],
@@ -261,7 +262,7 @@ class SyncMenusApiRequest
 			// Remove existing locations for the menu
 			$locations = get_nav_menu_locations();
 			foreach ($locations as $key => $value) {
-				if ($menu_id === $value){
+				if ($menu_id === $value) {
 					unset($locations[$key]);
 				}
 			}
@@ -348,7 +349,7 @@ class SyncMenusApiRequest
 
 				// convert the pull data into an array
 				$pull_data = json_decode(json_encode($api_response->data->pull_data), TRUE); // $response->response->data->pull_data;
-				SyncDebug::log(__METHOD__.'():' . __LINE__ . ' - pull data=' . var_export($pull_data, TRUE));
+				SyncDebug::log(__METHOD__ . '():' . __LINE__ . ' - pull data=' . var_export($pull_data, TRUE));
 				$site_key = $api_response->data->site_key; // $pull_data->site_key;
 				$target_url = SyncOptions::get('target');
 
@@ -446,8 +447,11 @@ class SyncMenusApiRequest
 		if (FALSE !== $items && is_array($items) && !empty($items)) {
 
 			foreach ($items as $item) {
-
+				
 				if ('0' !== $item->menu_item_parent) {
+
+					SyncDebug::log(__METHOD__ . '() has parent: ' . var_export($item->ID, TRUE));
+					SyncDebug::log(__METHOD__ . '() parent id: ' . var_export($item->menu_item_parent, TRUE));
 
 					// Find the menu item with that original sync_menu_original_id
 					$args = array(
@@ -471,9 +475,10 @@ class SyncMenusApiRequest
 						while ($query->have_posts()) {
 							$query->the_post();
 							$new_parent_id = get_the_ID();
+							SyncDebug::log(__METHOD__ . '() new parent id: ' . var_export($new_parent_id, TRUE));
 							$item_args = array(
 								'menu-item-title' => $item->title,
-								'menu-item-classes' => $item->classes,
+								'menu-item-classes' => implode(' ', $item->classes ),
 								'menu-item-url' => $item->url,
 								'menu-item-status' => $item->post_status,
 								'menu-item-object-id' => $item->object_id,
