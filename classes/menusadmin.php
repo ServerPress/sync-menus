@@ -105,9 +105,8 @@ class SyncMenusAdmin
 		SyncDebug::log(__METHOD__ . '() operation="' . $operation . '"');
 
 		$license = new SyncLicensing();
-		// @todo enable
-		//if (!$license->check_license('sync_menus', WPSiteSync_Menus::PLUGIN_KEY, WPSiteSync_Menus::PLUGIN_NAME))
-		// return $found;
+		if (!$license->check_license('sync_menus', WPSiteSync_Menus::PLUGIN_KEY, WPSiteSync_Menus::PLUGIN_NAME))
+			return $found;
 
 		if ('pushmenu' === $operation) {
 			SyncDebug::log(' - post=' . var_export($_POST, TRUE));

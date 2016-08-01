@@ -24,7 +24,6 @@ if (!class_exists('WPSiteSync_Menus')) {
 
 		const PLUGIN_NAME = 'WPSiteSync for Menus';
 		const PLUGIN_VERSION = '1.0';
-		// @todo right key
 		const PLUGIN_KEY = '4151f50e546c7b0a53994d4c27f4cf31'; // '1a127f14595c88504b22839abc40708c';
 
 		private $_license = NULL;
@@ -59,9 +58,8 @@ if (!class_exists('WPSiteSync_Menus')) {
 			$this->_license = new SyncLicensing();
 			add_filter('spectrom_sync_active_extensions', array(&$this, 'filter_active_extensions'), 10, 2);
 
-			// @todo enable licensing
-			//if (!$this->_license->check_license('sync_menus', self::PLUGIN_KEY, self::PLUGIN_NAME))
-			//return;
+			if (!$this->_license->check_license('sync_menus', self::PLUGIN_KEY, self::PLUGIN_NAME))
+				return;
 
 			if (is_admin()) {
 				$this->load_class('menusadmin');

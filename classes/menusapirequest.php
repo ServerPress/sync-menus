@@ -81,9 +81,8 @@ class SyncMenusApiRequest
 		SyncDebug::log(__METHOD__ . '() action=' . $action);
 
 		$license = new SyncLicensing();
-		// @todo enable
-		//if (!$license->check_license('sync_menus', WPSiteSync_Menus::PLUGIN_KEY, WPSiteSync_Menus::PLUGIN_NAME))
-		// return $found;
+		if (!$license->check_license('sync_menus', WPSiteSync_Menus::PLUGIN_KEY, WPSiteSync_Menus::PLUGIN_NAME))
+			return $args;
 
 		if ('pushmenu' === $action) {
 			SyncDebug::log(__METHOD__ . '() args=' . var_export($args, TRUE));
@@ -447,7 +446,7 @@ class SyncMenusApiRequest
 		if (FALSE !== $items && is_array($items) && !empty($items)) {
 
 			foreach ($items as $item) {
-				
+
 				if ('0' !== $item->menu_item_parent) {
 
 					SyncDebug::log(__METHOD__ . '() has parent: ' . var_export($item->ID, TRUE));
