@@ -61,7 +61,7 @@ if (!class_exists('WPSiteSync_Menus')) {
 			if (!$this->_license->check_license('sync_menus', self::PLUGIN_KEY, self::PLUGIN_NAME))
 				return;
 
-			if (is_admin()) {
+			if (is_admin() && SyncOptions::is_auth()) {
 				$this->load_class('menusadmin');
 				SyncMenusAdmin::get_instance();
 			}
