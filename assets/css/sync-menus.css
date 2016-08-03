@@ -1,6 +1,18 @@
-.sync-menu-contents {
+#spectrom_sync.sync-menu-contents {
 	margin-right: 0.5em;
 	float: right;
+	border: none;
+}
+
+#spectrom_sync.sync-menu-contents .sync-button {
+	width: auto;
+	padding-left: 6px;
+	padding-right: 8px;
+}
+
+#spectrom_sync.sync-menu-contents .sync-button-icon {
+	margin-left: 0;
+	padding-right: 0;
 }
 
 .sync-menu-msgs {

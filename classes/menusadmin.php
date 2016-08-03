@@ -60,7 +60,7 @@ class SyncMenusAdmin
 	{
 		?>
 		<div id="sync-menu-ui" style="display:none">
-			<div class="sync-menu-contents">
+			<div id="spectrom_sync" class="sync-menu-contents">
 				<button class="sync-menus-push button button-primary sync-button" type="button" title="<?php esc_html_e('Push this Menu to the Target site', 'wpsitesync-menus'); ?>">
 					<span class="sync-button-icon dashicons dashicons-migrate"></span>
 					<?php esc_html_e('Push to Target', 'wpsitesync-menus'); ?>
