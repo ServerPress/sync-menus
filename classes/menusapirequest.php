@@ -35,18 +35,18 @@ class SyncMenusApiRequest
 	public function filter_error_codes($message, $code)
 	{
 		switch ($code) {
-			case self::ERROR_TARGET_MENU_NOT_FOUND:
-				$message = __('Menu cannot be found on Target site', 'wpsitesync-menus');
-				break;
-			case self::ERROR_MENU_NOT_FOUND:
-				$message = __('The menu cannot be found', 'wpsitesync-menus');
-				break;
-			case self::ERROR_MENU_ITEM_NOT_ADDED:
-				$message = __('Menu item was not able to be added.', 'wpsitesync-menus');
-				break;
-			case self::ERROR_MENU_ITEM_NOT_MODIFIED:
-				$message = __('Menu item was unable to be updated.', 'wpsitesync-menus');
-				break;
+		case self::ERROR_TARGET_MENU_NOT_FOUND:
+			$message = __('Menu cannot be found on Target site', 'wpsitesync-menus');
+			break;
+		case self::ERROR_MENU_NOT_FOUND:
+			$message = __('The menu cannot be found', 'wpsitesync-menus');
+			break;
+		case self::ERROR_MENU_ITEM_NOT_ADDED:
+			$message = __('Menu item was not able to be added.', 'wpsitesync-menus');
+			break;
+		case self::ERROR_MENU_ITEM_NOT_MODIFIED:
+			$message = __('Menu item was unable to be updated.', 'wpsitesync-menus');
+			break;
 		}
 		return $message;
 	}
@@ -61,9 +61,9 @@ class SyncMenusApiRequest
 	public function filter_notice_codes($message, $code)
 	{
 		switch ($code) {
-			case self::NOTICE_MENU_MODIFIED:
-				$message = __('Menu has been modified on Target site since the last Push. Continue?', 'wpsitesync-menus');
-				break;
+		case self::NOTICE_MENU_MODIFIED:
+			$message = __('Menu has been modified on Target site since the last Push. Continue?', 'wpsitesync-menus');
+			break;
 		}
 		return $message;
 	}
@@ -107,7 +107,7 @@ class SyncMenusApiRequest
 			SyncDebug::log(__METHOD__ . '() push_data=' . var_export($push_data, TRUE));
 
 			$args['push_data'] = $push_data;
-		} elseif ('pullmenu' === $action) {
+		} else if ('pullmenu' === $action) {
 			SyncDebug::log(__METHOD__ . '() args=' . var_export($args, TRUE));
 		}
 
@@ -125,7 +125,7 @@ class SyncMenusApiRequest
 	 */
 	public function api_controller_request($return, $action, SyncApiResponse $response)
 	{
-		SyncDebug::log(__METHOD__ . "() handling '{$action}' action");
+SyncDebug::log(__METHOD__ . "() handling '{$action}' action");
 
 		$license = new SyncLicensing();
 		// @todo enable
@@ -171,12 +171,12 @@ class SyncMenusApiRequest
 
 					$item_exists = array_search($item->post_name, $push_slugs);
 
-					SyncDebug::log(__METHOD__ . '() item exists: ' . var_export($item_exists, TRUE));
+SyncDebug::log(__METHOD__ . '() item exists: ' . var_export($item_exists, TRUE));
 
 					// If the current item doesn't match a title in the push data, delete it
 					if (FALSE === $item_exists) {
 						wp_delete_post($item->db_id);
-						SyncDebug::log(__METHOD__ . '() item deleted: ' . var_export($item_exists, TRUE));
+SyncDebug::log(__METHOD__ . '() item deleted: ' . var_export($item_exists, TRUE));
 						continue;
 					}
 
@@ -184,7 +184,6 @@ class SyncMenusApiRequest
 					$push_key = $this->get_menu_item_key($push_data, $item->post_name, 'post_name');
 
 					if (FALSE !== $push_key && NULL !== $push_key) {
-
 						$item_args = $this->set_menu_item_args($push_data, $push_key);
 
 						// Update the item
@@ -195,7 +194,7 @@ class SyncMenusApiRequest
 							$response->error_code(SyncMenusApiRequest::ERROR_MENU_ITEM_NOT_MODIFIED);
 							return TRUE;            // return, signaling that the API request was processed
 						}
-						SyncDebug::log(__METHOD__ . '() item updated: ' . var_export($item_id, TRUE));
+SyncDebug::log(__METHOD__ . '() item updated: ' . var_export($item_id, TRUE));
 					}
 				}
 
@@ -205,12 +204,10 @@ class SyncMenusApiRequest
 
 				// Add any new menu items
 				foreach ($new_items as $key => $item) {
-
 					// Get push menu item key
 					$push_key = $this->get_menu_item_key($push_data, $item, 'post_name');
 
 					if (FALSE !== $push_key && NULL !== $push_key) {
-
 						$item_args = $this->set_menu_item_args($push_data, $push_key);
 
 						$item_id = wp_update_nav_menu_item($menu_id, 0, $item_args);
@@ -220,12 +217,10 @@ class SyncMenusApiRequest
 							$response->error_code(SyncMenusApiRequest::ERROR_MENU_ITEM_NOT_ADDED);
 							return TRUE;            // return, signaling that the API request was processed
 						}
-						SyncDebug::log(__METHOD__ . '() item added: ' . var_export($item_id, TRUE));
+SyncDebug::log(__METHOD__ . '() item added: ' . var_export($item_id, TRUE));
 					}
 				}
-
 			} else {
-
 				// Add all menu items
 				foreach ($push_data['menu_items'] as $item) {
 					$item_args = array(
@@ -251,7 +246,7 @@ class SyncMenusApiRequest
 						$response->error_code(SyncMenusApiRequest::ERROR_MENU_ITEM_NOT_ADDED);
 						return TRUE;            // return, signaling that the API request was processed
 					}
-					SyncDebug::log(__METHOD__ . '() item added: ' . var_export($item_id, TRUE));
+SyncDebug::log(__METHOD__ . '() item added: ' . var_export($item_id, TRUE));
 				}
 			}
 
@@ -275,8 +270,7 @@ class SyncMenusApiRequest
 			set_theme_mod('nav_menu_locations', $locations);
 
 			$return = TRUE; // tell the SyncApiController that the request was handled
-		} elseif ('pullmenu' === $action) {
-
+		} else if ('pullmenu' === $action) {
 			$input = new SyncInput();
 			$menu_name = $input->post('menu_name', 0);
 			$pull_data = array();
@@ -297,7 +291,7 @@ class SyncMenusApiRequest
 
 			$response->set('pull_data', $pull_data); // add all the post information to the ApiResponse object
 			$response->set('site_key', SyncOptions::get('site_key'));
-			SyncDebug::log(__METHOD__ . '():' . __LINE__ . ' - response data=' . var_export($response, TRUE));
+SyncDebug::log(__METHOD__ . '():' . __LINE__ . ' - response data=' . var_export($response, TRUE));
 
 			$return = TRUE; // tell the SyncApiController that the request was handled
 		}
@@ -314,41 +308,42 @@ class SyncMenusApiRequest
 	 */
 	public function api_response($action, $remote_args, $response)
 	{
-		SyncDebug::log(__METHOD__ . "('{$action}')");
+SyncDebug::log(__METHOD__ . "('{$action}')");
 
 		if ('pushmenu' === $action) {
-
-			SyncDebug::log(__METHOD__ . '() response from API request: ' . var_export($response, TRUE));
-
-			$api_response = NULL;
-
-			if (isset($response->response)) {
-				SyncDebug::log(__METHOD__ . '() decoding response: ' . var_export($response->response, TRUE));
-				$api_response = $response->response;
-			} else SyncDebug::log(__METHOD__ . '() no reponse->response element');
-
-			SyncDebug::log(__METHOD__ . '() api response body=' . var_export($api_response, TRUE));
-
-		} elseif ('pullmenu' === $action) {
-
-			SyncDebug::log(__METHOD__ . '() response from API request: ' . var_export($response, TRUE));
+SyncDebug::log(__METHOD__ . '() response from API request: ' . var_export($response, TRUE));
 
 			$api_response = NULL;
 
 			if (isset($response->response)) {
-				SyncDebug::log(__METHOD__ . '() decoding response: ' . var_export($response->response, TRUE));
+SyncDebug::log(__METHOD__ . '() decoding response: ' . var_export($response->response, TRUE));
 				$api_response = $response->response;
-			} else SyncDebug::log(__METHOD__ . '() no response->response element');
+			} else {
+SyncDebug::log(__METHOD__ . '() no reponse->response element');
+			}
 
-			SyncDebug::log(__METHOD__ . '() api response body=' . var_export($api_response, TRUE));
+SyncDebug::log(__METHOD__ . '() api response body=' . var_export($api_response, TRUE));
+
+		} else if ('pullmenu' === $action) {
+SyncDebug::log(__METHOD__ . '() response from API request: ' . var_export($response, TRUE));
+
+			$api_response = NULL;
+
+			if (isset($response->response)) {
+SyncDebug::log(__METHOD__ . '() decoding response: ' . var_export($response->response, TRUE));
+				$api_response = $response->response;
+			} else {
+SyncDebug::log(__METHOD__ . '() no response->response element');
+			}
+
+SyncDebug::log(__METHOD__ . '() api response body=' . var_export($api_response, TRUE));
 
 			if (NULL !== $api_response) {
-
 				$save_post = $_POST;
 
 				// convert the pull data into an array
 				$pull_data = json_decode(json_encode($api_response->data->pull_data), TRUE); // $response->response->data->pull_data;
-				SyncDebug::log(__METHOD__ . '():' . __LINE__ . ' - pull data=' . var_export($pull_data, TRUE));
+SyncDebug::log(__METHOD__ . '():' . __LINE__ . ' - pull data=' . var_export($pull_data, TRUE));
 				$site_key = $api_response->data->site_key; // $pull_data->site_key;
 				$target_url = SyncOptions::get('target');
 
@@ -365,10 +360,10 @@ class SyncMenusApiRequest
 					'auth' => 0,
 				);
 
-				SyncDebug::log(__METHOD__ . '() creating controller with: ' . var_export($args, TRUE));
+SyncDebug::log(__METHOD__ . '() creating controller with: ' . var_export($args, TRUE));
 				$this->_push_controller = new SyncApiController($args);
-				SyncDebug::log(__METHOD__ . '():' . __LINE__ . ' - returned from controller');
-				SyncDebug::log(__METHOD__ . '():' . __LINE__ . ' - response=' . var_export($response, TRUE));
+SyncDebug::log(__METHOD__ . '():' . __LINE__ . ' - returned from controller');
+SyncDebug::log(__METHOD__ . '():' . __LINE__ . ' - response=' . var_export($response, TRUE));
 
 				$_POST = $save_post;
 
@@ -436,7 +431,6 @@ class SyncMenusApiRequest
 	 */
 	private function set_parent_ids($menu_id)
 	{
-
 		// Get menu items
 		$menu_args = array(
 			'numberofposts' => -1,
@@ -444,11 +438,8 @@ class SyncMenusApiRequest
 		$items = wp_get_nav_menu_items($menu_id, $menu_args);
 
 		if (FALSE !== $items && is_array($items) && !empty($items)) {
-
 			foreach ($items as $item) {
-
 				if ('0' !== $item->menu_item_parent) {
-
 					SyncDebug::log(__METHOD__ . '() has parent: ' . var_export($item->ID, TRUE));
 					SyncDebug::log(__METHOD__ . '() parent id: ' . var_export($item->menu_item_parent, TRUE));
 

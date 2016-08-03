@@ -114,7 +114,7 @@ class SyncMenusAdmin
 			$ajax = WPSiteSync_Menus::get_instance()->load_class('menusajaxrequest', TRUE);
 			$ajax->push_menu($resp);
 			$found = TRUE;
-		} elseif ('pullmenu' === $operation) {
+		} else if ('pullmenu' === $operation) {
 			SyncDebug::log(' - post=' . var_export($_POST, TRUE));
 
 			$ajax = WPSiteSync_Menus::get_instance()->load_class('menusajaxrequest', TRUE);

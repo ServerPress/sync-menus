@@ -48,7 +48,7 @@ if (!class_exists('WPSiteSync_Menus')) {
 		}
 
 		/**
-		 * Callback for SpectrOM Sync initialization action
+		 * Callback for Sync initialization action
 		 *
 		 * @since 1.0.0
 		 * @return void
