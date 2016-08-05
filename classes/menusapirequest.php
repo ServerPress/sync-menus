@@ -3,9 +3,10 @@
 class SyncMenusApiRequest
 {
 	private static $_instance = NULL;
+	private $_push_data;
 
 	const ERROR_TARGET_MENU_NOT_FOUND = 200;
-	const ERROR_MENU_NOT_FOUND = 201;
+	const ERROR_TARGET_MENU_ITEMS_NOT_FOUND = 201;
 	const ERROR_MENU_ITEM_NOT_ADDED = 202;
 	const NOTICE_MENU_ITEM_NOT_MODIFIED = 203;
 
@@ -38,9 +39,9 @@ class SyncMenusApiRequest
 		case self::ERROR_TARGET_MENU_NOT_FOUND:
 			$message = __('Menu cannot be found on Target site', 'wpsitesync-menus');
 			break;
-		case self::ERROR_MENU_NOT_FOUND:
-			$message = __('The menu cannot be found', 'wpsitesync-menus');
-			break;
+		case self::ERROR_TARGET_MENU_ITEMS_NOT_FOUND:
+			$message = __('Some of the Content in the menu is missing on the Target. Please push these Pages to the Target before Syncing this menu.', 'wpsitesync-menus');
+				break;
 		case self::ERROR_MENU_ITEM_NOT_ADDED:
 			$message = __('Menu item was not able to be added.', 'wpsitesync-menus');
 			break;
@@ -94,6 +95,8 @@ class SyncMenusApiRequest
 			);
 
 			$push_data['menu_items'] = wp_get_nav_menu_items($menu_name, $menu_args);
+			$push_data['site_key'] = $args['auth']['site_key'];
+			$push_data['pull'] = FALSE;
 
 			// Get menu locations
 			$menu_object = wp_get_nav_menu_object($menu_name);
@@ -128,9 +131,8 @@ class SyncMenusApiRequest
 SyncDebug::log(__METHOD__ . "() handling '{$action}' action");
 
 		$license = new SyncLicensing();
-		// @todo enable
-		//if (!$license->check_license('sync_menus', WPSiteSync_Menus::PLUGIN_KEY, WPSiteSync_Menus::PLUGIN_NAME))
-		// return $found;
+		if (!$license->check_license('sync_menus', WPSiteSync_Menus::PLUGIN_KEY, WPSiteSync_Menus::PLUGIN_NAME))
+			return TRUE;
 
 		if ('pushmenu' === $action) {
 			$input = new SyncInput();
@@ -142,8 +144,15 @@ SyncDebug::log(__METHOD__ . "() handling '{$action}' action");
 				return TRUE;            // return, signaling that the API request was processed
 			}
 
-			$push_data = $input->post_raw('push_data', array());
-			SyncDebug::log(__METHOD__ . '() found push_data information: ' . var_export($push_data, TRUE));
+			$this->_push_data = $input->post_raw('push_data', array());
+			SyncDebug::log(__METHOD__ . '() found push_data information: ' . var_export($this->_push_data, TRUE));
+
+			// Check if post_type items exist
+			$post_items_exist = $this->check_post_type_items_exists($this->_push_data['pull']);
+			if (FALSE !== $post_items_exist) {
+				$response->error_code(SyncMenusApiRequest::ERROR_TARGET_MENU_ITEMS_NOT_FOUND, $post_items_exist);
+				return TRUE;            // return, signaling that the API request was processed
+			}
 
 			// Check if menu exists
 			$menu_exists = wp_get_nav_menu_object($menu_name);
@@ -162,7 +171,7 @@ SyncDebug::log(__METHOD__ . "() handling '{$action}' action");
 			$current_menu_items = wp_get_nav_menu_items($menu_id, $menu_args);
 
 			// Get post_names
-			$push_slugs = wp_list_pluck($push_data['menu_items'], 'post_name', 'db_id');
+			$push_slugs = wp_list_pluck($this->_push_data['menu_items'], 'post_name', 'db_id');
 
 			// If there are existing menu items, process them first
 			if (FALSE !== $current_menu_items && is_array($current_menu_items) && !empty($current_menu_items)) {
@@ -181,14 +190,14 @@ SyncDebug::log(__METHOD__ . '() item deleted: ' . var_export($item_exists, TRUE)
 					}
 
 					// Get push item key
-					$push_key = $this->get_menu_item_key($push_data, $item->post_name, 'post_name');
+					$push_key = $this->get_menu_item_key($this->_push_data, $item->post_name, 'post_name');
 
 					if (FALSE !== $push_key && NULL !== $push_key) {
-						$item_args = $this->set_menu_item_args($push_data, $push_key);
+						$item_args = $this->set_menu_item_args($this->_push_data, $push_key);
 
 						// Update the item
 						$item_id = wp_update_nav_menu_item($menu_id, $item->db_id, $item_args);
-						update_post_meta($item_id, 'sync_menu_original_id', $push_data['menu_items'][$push_key]['db_id']);
+						update_post_meta($item_id, 'sync_menu_original_id', $this->_push_data['menu_items'][$push_key]['db_id']);
 
 						if (is_wp_error($item_id)) {
 							$response->error_code(SyncMenusApiRequest::ERROR_MENU_ITEM_NOT_MODIFIED);
@@ -205,13 +214,14 @@ SyncDebug::log(__METHOD__ . '() item updated: ' . var_export($item_id, TRUE));
 				// Add any new menu items
 				foreach ($new_items as $key => $item) {
 					// Get push menu item key
-					$push_key = $this->get_menu_item_key($push_data, $item, 'post_name');
+					$push_key = $this->get_menu_item_key($this->_push_data, $item, 'post_name');
 
 					if (FALSE !== $push_key && NULL !== $push_key) {
-						$item_args = $this->set_menu_item_args($push_data, $push_key);
+
+						$item_args = $this->set_menu_item_args($this->_push_data, $push_key);
 
 						$item_id = wp_update_nav_menu_item($menu_id, 0, $item_args);
-						update_post_meta($item_id, 'sync_menu_original_id', $push_data['menu_items'][$push_key]['db_id']);
+						update_post_meta($item_id, 'sync_menu_original_id', $this->_push_data['menu_items'][$push_key]['db_id']);
 
 						if (is_wp_error($item_id)) {
 							$response->error_code(SyncMenusApiRequest::ERROR_MENU_ITEM_NOT_ADDED);
@@ -222,7 +232,7 @@ SyncDebug::log(__METHOD__ . '() item added: ' . var_export($item_id, TRUE));
 				}
 			} else {
 				// Add all menu items
-				foreach ($push_data['menu_items'] as $item) {
+				foreach ($this->_push_data['menu_items'] as $item) {
 					$item_args = array(
 						'menu-item-title' => $item['title'],
 						'menu-item-classes' => implode(' ', $item['classes'] ),
@@ -262,8 +272,8 @@ SyncDebug::log(__METHOD__ . '() item added: ' . var_export($item_id, TRUE));
 			}
 
 			// Set menu location
-			if (array_key_exists('menu_locations', $push_data)) {
-				foreach ($push_data['menu_locations'] as $location) {
+			if (array_key_exists('menu_locations', $this->_push_data)) {
+				foreach ($this->_push_data['menu_locations'] as $location) {
 					$locations[$location] = $menu_id;
 				}
 			}
@@ -324,6 +334,11 @@ SyncDebug::log(__METHOD__ . '() no reponse->response element');
 
 SyncDebug::log(__METHOD__ . '() api response body=' . var_export($api_response, TRUE));
 
+			if (0 === $response->get_error_code()) {
+				$response->success(TRUE);
+			} else {
+			}
+
 		} else if ('pullmenu' === $action) {
 SyncDebug::log(__METHOD__ . '() response from API request: ' . var_export($response, TRUE));
 
@@ -346,6 +361,8 @@ SyncDebug::log(__METHOD__ . '() api response body=' . var_export($api_response, 
 SyncDebug::log(__METHOD__ . '():' . __LINE__ . ' - pull data=' . var_export($pull_data, TRUE));
 				$site_key = $api_response->data->site_key; // $pull_data->site_key;
 				$target_url = SyncOptions::get('target');
+				$pull_data['site_key'] = $site_key;
+				$pull_data['pull'] = TRUE;
 
 				$_POST['menu_name'] = $_REQUEST['menu_name']; // used by SyncApiController->push() to identify target post
 				$_POST['push_data'] = $pull_data;
@@ -420,6 +437,40 @@ SyncDebug::log(__METHOD__ . '():' . __LINE__ . ' - response=' . var_export($resp
 			}
 		}
 		return $push_key;
+	}
+
+	/**
+	 * Check if post_type items to see if they exists
+	 *
+	 * @since 1.0.0
+	 * @param $pull
+	 * @return mixed
+	 */
+	private function check_post_type_items_exists($pull = '0')
+	{
+		$items = FALSE;
+		$model = new SyncModel();
+		$site_key = $this->_push_data['site_key'];
+
+		foreach ($this->_push_data['menu_items'] as $key => $item) {
+			if ('post_type' === $item['type']) {
+				if ('0' === $pull) {
+					$sync_data = $model->get_sync_data(absint($item['object_id']), $site_key, 'post');
+				} else {
+					$sync_data = $model->get_sync_target_data(absint($item['object_id']), $site_key, 'post');
+				}
+				if (NULL === $sync_data) {
+					$items[] = $item['title'];
+				}
+				SyncDebug::log(__METHOD__ . '() sync data: ' . var_export($sync_data, TRUE));
+				if ('0' === $pull) {
+					$this->_push_data['menu_items'][$key]['object_id'] = $sync_data->target_content_id;
+				} else {
+					$this->_push_data['menu_items'][$key]['object_id'] = $sync_data->source_content_id;
+				}
+			}
+		}
+		return $items;
 	}
 
 	/**

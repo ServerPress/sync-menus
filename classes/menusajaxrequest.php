@@ -56,6 +56,7 @@ class SyncMenusAjaxRequest
 			SyncDebug::log(' - no error, setting success');
 			$resp->success(TRUE);
 		} else {
+			$resp->success(FALSE);
 			SyncDebug::log(' - error code: ' . $api_response->get_error_code());
 		}
 
@@ -78,7 +79,7 @@ class SyncMenusAjaxRequest
 		if (0 === $menu_name) {
 			// No menu name. Return error message
 			WPSiteSync_Menus::get_instance()->load_class('menusapirequest');
-			$resp->error_code(SyncMenusApiRequest::ERROR_MENU_NOT_FOUND);
+			$resp->error_code(SyncMenusApiRequest::ERROR_TARGET_MENU_NOT_FOUND);
 			$resp->success(FALSE);
 			return TRUE;        // return, signaling that we've handled the request
 		}
@@ -95,6 +96,7 @@ class SyncMenusAjaxRequest
 			SyncDebug::log(' - no error, setting success');
 			$resp->success(TRUE);
 		} else {
+			$resp->success(FALSE);
 			SyncDebug::log(' - error code: ' . $api_response->get_error_code());
 		}
 

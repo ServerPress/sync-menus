@@ -138,7 +138,7 @@ WPSiteSyncContent_Menus.prototype.push_menu = function (menu_name)
         {
             wpsitesynccontent.menus.hide_msgs();
             //console.log('in ajax success callback - response');
-            //console.log(response);
+            console.log(response);
             if (response.success) {
                 wpsitesynccontent.menus.set_message('success');
             } else if (0 !== response.error_code) {
@@ -181,7 +181,7 @@ WPSiteSyncContent_Menus.prototype.pull_menu = function (menu_name)
         {
             wpsitesynccontent.menus.hide_msgs();
             // console.log('in ajax success callback - response');
-            // console.log(response);
+            //console.log(response);
             if (response.success) {
                 wpsitesynccontent.menus.set_message('success');
                 location.reload();
