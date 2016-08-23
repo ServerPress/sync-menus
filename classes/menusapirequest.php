@@ -41,7 +41,7 @@ class SyncMenusApiRequest
 			break;
 		case self::ERROR_TARGET_MENU_ITEMS_NOT_FOUND:
 			$message = __('Some of the Content in the menu is missing on the Target. Please push these Pages to the Target before Syncing this menu.', 'wpsitesync-menus');
-				break;
+			break;
 		case self::ERROR_MENU_ITEM_NOT_ADDED:
 			$message = __('Menu item was not able to be added.', 'wpsitesync-menus');
 			break;
@@ -79,14 +79,14 @@ class SyncMenusApiRequest
 	 */
 	public function api_request($args, $action, $remote_args)
 	{
-		SyncDebug::log(__METHOD__ . '() action=' . $action);
+SyncDebug::log(__METHOD__ . '() action=' . $action);
 
 		$license = new SyncLicensing();
 		if (!$license->check_license('sync_menus', WPSiteSync_Menus::PLUGIN_KEY, WPSiteSync_Menus::PLUGIN_NAME))
 			return $args;
 
 		if ('pushmenu' === $action) {
-			SyncDebug::log(__METHOD__ . '() args=' . var_export($args, TRUE));
+SyncDebug::log(__METHOD__ . '() args=' . var_export($args, TRUE));
 
 			$push_data = array();
 			$menu_name = $args['menu_name'];
@@ -107,11 +107,11 @@ class SyncMenusApiRequest
 				$push_data['menu_locations'] = array_keys($menu_locations, $menu_id);
 			}
 
-			SyncDebug::log(__METHOD__ . '() push_data=' . var_export($push_data, TRUE));
+SyncDebug::log(__METHOD__ . '() push_data=' . var_export($push_data, TRUE));
 
 			$args['push_data'] = $push_data;
 		} else if ('pullmenu' === $action) {
-			SyncDebug::log(__METHOD__ . '() args=' . var_export($args, TRUE));
+SyncDebug::log(__METHOD__ . '() args=' . var_export($args, TRUE));
 		}
 
 		// return the filter value
@@ -145,7 +145,7 @@ SyncDebug::log(__METHOD__ . "() handling '{$action}' action");
 			}
 
 			$this->_push_data = $input->post_raw('push_data', array());
-			SyncDebug::log(__METHOD__ . '() found push_data information: ' . var_export($this->_push_data, TRUE));
+SyncDebug::log(__METHOD__ . '() found push_data information: ' . var_export($this->_push_data, TRUE));
 
 			// Check if post_type items exist
 			$post_items_exist = $this->check_post_type_items_exists($this->_push_data['pull']);
@@ -160,7 +160,7 @@ SyncDebug::log(__METHOD__ . "() handling '{$action}' action");
 			// If menu doesn't exist, create it
 			if (!$menu_exists) {
 				$menu_id = wp_create_nav_menu($menu_name);
-				SyncDebug::log('created menu');
+SyncDebug::log('created menu');
 			} else {
 				$menu_id = $menu_exists->term_id;
 			}
@@ -197,6 +197,7 @@ SyncDebug::log(__METHOD__ . '() item deleted: ' . var_export($item_exists, TRUE)
 
 						// Update the item
 						$item_id = wp_update_nav_menu_item($menu_id, $item->db_id, $item_args);
+						// TODO: use meta key prefix of '_spectrom_sync_*' -- this data will not be Sync'd to Target
 						update_post_meta($item_id, 'sync_menu_original_id', $this->_push_data['menu_items'][$push_key]['db_id']);
 
 						if (is_wp_error($item_id)) {
@@ -217,10 +218,11 @@ SyncDebug::log(__METHOD__ . '() item updated: ' . var_export($item_id, TRUE));
 					$push_key = $this->get_menu_item_key($this->_push_data, $item, 'post_name');
 
 					if (FALSE !== $push_key && NULL !== $push_key) {
-
 						$item_args = $this->set_menu_item_args($this->_push_data, $push_key);
 
 						$item_id = wp_update_nav_menu_item($menu_id, 0, $item_args);
+						// TODO: use meta key prefix of '_spectrom_sync_*' -- this will not be Sync'd to Target
+						// TODO: change to use `wp_spectrom_sync` table with a `content_type` of 'menu'
 						update_post_meta($item_id, 'sync_menu_original_id', $this->_push_data['menu_items'][$push_key]['db_id']);
 
 						if (is_wp_error($item_id)) {
@@ -250,6 +252,7 @@ SyncDebug::log(__METHOD__ . '() item added: ' . var_export($item_id, TRUE));
 					);
 
 					$item_id = wp_update_nav_menu_item($menu_id, 0, $item_args);
+					// TODO: use meta key prefix of '_spectrom_sync_*' -- this will not be Sync'd to Target
 					update_post_meta($item_id, 'sync_menu_original_id', $item['db_id']);
 
 					if (is_wp_error($item_id)) {
@@ -336,9 +339,7 @@ SyncDebug::log(__METHOD__ . '() api response body=' . var_export($api_response, 
 
 			if (0 === $response->get_error_code()) {
 				$response->success(TRUE);
-			} else {
 			}
-
 		} else if ('pullmenu' === $action) {
 SyncDebug::log(__METHOD__ . '() response from API request: ' . var_export($response, TRUE));
 
@@ -440,8 +441,9 @@ SyncDebug::log(__METHOD__ . '():' . __LINE__ . ' - response=' . var_export($resp
 	}
 
 	/**
-	 * Check if post_type items to see if they exists
+	 * Check post_type items to see if they exists
 	 *
+	 // TODO: finish docblock
 	 * @since 1.0.0
 	 * @param $pull
 	 * @return mixed
@@ -462,7 +464,7 @@ SyncDebug::log(__METHOD__ . '():' . __LINE__ . ' - response=' . var_export($resp
 				if (NULL === $sync_data) {
 					$items[] = $item['title'];
 				}
-				SyncDebug::log(__METHOD__ . '() sync data: ' . var_export($sync_data, TRUE));
+SyncDebug::log(__METHOD__ . '() sync data: ' . var_export($sync_data, TRUE));
 				if ('0' === $pull) {
 					$this->_push_data['menu_items'][$key]['object_id'] = $sync_data->target_content_id;
 				} else {
@@ -491,8 +493,8 @@ SyncDebug::log(__METHOD__ . '():' . __LINE__ . ' - response=' . var_export($resp
 		if (FALSE !== $items && is_array($items) && !empty($items)) {
 			foreach ($items as $item) {
 				if ('0' !== $item->menu_item_parent) {
-					SyncDebug::log(__METHOD__ . '() has parent: ' . var_export($item->ID, TRUE));
-					SyncDebug::log(__METHOD__ . '() parent id: ' . var_export($item->menu_item_parent, TRUE));
+SyncDebug::log(__METHOD__ . '() has parent: ' . var_export($item->ID, TRUE));
+SyncDebug::log(__METHOD__ . '() parent id: ' . var_export($item->menu_item_parent, TRUE));
 
 					// Find the menu item with that original sync_menu_original_id
 					$args = array(
@@ -516,7 +518,7 @@ SyncDebug::log(__METHOD__ . '():' . __LINE__ . ' - response=' . var_export($resp
 						while ($query->have_posts()) {
 							$query->the_post();
 							$new_parent_id = get_the_ID();
-							SyncDebug::log(__METHOD__ . '() new parent id: ' . var_export($new_parent_id, TRUE));
+SyncDebug::log(__METHOD__ . '() new parent id: ' . var_export($new_parent_id, TRUE));
 							$item_args = array(
 								'menu-item-title' => $item->title,
 								'menu-item-classes' => implode(' ', $item->classes ),
