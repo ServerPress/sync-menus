@@ -5,7 +5,7 @@ Plugin URI: http://wpsitesync.com
 Description: Extension for WPSiteSync for Content that provides the ability to Sync Menus created within the WordPress admin.
 Author: WPSiteSync
 Author URI: http://wpsitesync.com
-Version: 1.0
+Version: 1.1
 Text Domain: wpsitesync-menus
 
 The PHP code portions are distributed under the GPL license. If not otherwise stated, all
@@ -23,7 +23,7 @@ if (!class_exists('WPSiteSync_Menus')) {
 		private static $_instance = NULL;
 
 		const PLUGIN_NAME = 'WPSiteSync for Menus';
-		const PLUGIN_VERSION = '1.0';
+		const PLUGIN_VERSION = '1.1';
 		const PLUGIN_KEY = '4151f50e546c7b0a53994d4c27f4cf31'; // '1a127f14595c88504b22839abc40708c';
 
 		private $_license = NULL;
