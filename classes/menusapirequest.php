@@ -16,8 +16,7 @@ class SyncMenusApiRequest
 	 * Retrieve singleton class instance
 	 *
 	 * @since 1.0.0
-	 * @static
-	 * @return null|SyncMenusAdmin instance reference to plugin
+	 * @return SyncMenusApiRequest instance reference API request class
 	 */
 	public static function get_instance()
 	{
@@ -81,8 +80,7 @@ class SyncMenusApiRequest
 	{
 SyncDebug::log(__METHOD__ . '() action=' . $action);
 
-		$license = new SyncLicensing();
-		if (!$license->check_license('sync_menus', WPSiteSync_Menus::PLUGIN_KEY, WPSiteSync_Menus::PLUGIN_NAME))
+		if (!WPSiteSyncContent::get_instance()->get_license()->check_license('sync_menus', WPSiteSync_Menus::PLUGIN_KEY, WPSiteSync_Menus::PLUGIN_NAME))
 			return $args;
 
 		if ('pushmenu' === $action) {
@@ -118,6 +116,7 @@ SyncDebug::log(__METHOD__ . '() args=' . var_export($args, TRUE));
 		return $args;
 	}
 
+	// TODO: add parameter definitions
 	/**
 	 * Handles the requests being processed on the Target from SyncApiController
 	 *
@@ -130,8 +129,7 @@ SyncDebug::log(__METHOD__ . '() args=' . var_export($args, TRUE));
 	{
 SyncDebug::log(__METHOD__ . "() handling '{$action}' action");
 
-		$license = new SyncLicensing();
-		if (!$license->check_license('sync_menus', WPSiteSync_Menus::PLUGIN_KEY, WPSiteSync_Menus::PLUGIN_NAME))
+		if (!WPSiteSyncContent::get_instance()->get_license()->check_license('sync_menus', WPSiteSync_Menus::PLUGIN_KEY, WPSiteSync_Menus::PLUGIN_NAME))
 			return TRUE;
 
 		if ('pushmenu' === $action) {
@@ -392,6 +390,7 @@ SyncDebug::log(__METHOD__ . '():' . __LINE__ . ' - response=' . var_export($resp
 		}
 	}
 
+	// TODO: add parameter definitions
 	/**
 	 * Set menu item args
 	 *
@@ -421,6 +420,7 @@ SyncDebug::log(__METHOD__ . '():' . __LINE__ . ' - response=' . var_export($resp
 		return $item_args;
 	}
 
+	// TODO: add parameter definitions
 	/**
 	 * Get Menu Item Key
 	 *
@@ -440,10 +440,10 @@ SyncDebug::log(__METHOD__ . '():' . __LINE__ . ' - response=' . var_export($resp
 		return $push_key;
 	}
 
+	// TODO: add parameter definitions
 	/**
 	 * Check post_type items to see if they exists
 	 *
-	 // TODO: finish docblock
 	 * @since 1.0.0
 	 * @param $pull
 	 * @return mixed
@@ -475,6 +475,7 @@ SyncDebug::log(__METHOD__ . '() sync data: ' . var_export($sync_data, TRUE));
 		return $items;
 	}
 
+	// TODO: add parameter definitions
 	/**
 	 * Set parent ids
 	 *
