@@ -24,9 +24,7 @@ if (!class_exists('WPSiteSync_Menus')) {
 
 		const PLUGIN_NAME = 'WPSiteSync for Menus';
 		const PLUGIN_VERSION = '1.1';
-		const PLUGIN_KEY = '4151f50e546c7b0a53994d4c27f4cf31'; // '1a127f14595c88504b22839abc40708c';
-
-		private $_license = NULL;
+		const PLUGIN_KEY = '0b6c5007c058ade619bb0c81e6204ba3';
 
 		private function __construct()
 		{
@@ -55,10 +53,9 @@ if (!class_exists('WPSiteSync_Menus')) {
 		 */
 		public function init()
 		{
-			$this->_license = new SyncLicensing();
 			add_filter('spectrom_sync_active_extensions', array(&$this, 'filter_active_extensions'), 10, 2);
 
-			if (!$this->_license->check_license('sync_menus', self::PLUGIN_KEY, self::PLUGIN_NAME))
+			if (!WPSiteSyncContent::get_instance()->get_license()->check_license('sync_menus', self::PLUGIN_KEY, self::PLUGIN_NAME))
 				return;
 
 			if (is_admin() && SyncOptions::is_auth()) {
@@ -111,16 +108,6 @@ if (!class_exists('WPSiteSync_Menus')) {
 		}
 
 		/**
-		 * Return license
-		 *
-		 * @return null
-		 */
-		public function get_license()
-		{
-			return $this->_license;
-		}
-
-		/**
 		 * Adds the WPSiteSync Menu add-on to the list of known WPSiteSync extensions
 		 *
 		 * @param array $extensions The list of extensions
@@ -129,7 +116,7 @@ if (!class_exists('WPSiteSync_Menus')) {
 		 */
 		public function filter_active_extensions($extensions, $set = FALSE)
 		{
-			if ($set || $this->_license->check_license('sync_menus', self::PLUGIN_KEY, self::PLUGIN_NAME))
+			if ($set || WPSiteSyncContent::get_instance()->get_license()->check_license('sync_menus', self::PLUGIN_KEY, self::PLUGIN_NAME))
 				$extensions['sync_menus'] = array(
 					'name' => self::PLUGIN_NAME,
 					'version' => self::PLUGIN_VERSION,

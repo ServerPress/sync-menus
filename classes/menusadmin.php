@@ -65,7 +65,7 @@ class SyncMenusAdmin
 					<span class="sync-button-icon dashicons dashicons-migrate"></span>
 					<?php esc_html_e('Push to Target', 'wpsitesync-menus'); ?>
 				</button>
-				<?php if (class_exists('WPSiteSync_Pull') && WPSiteSync_Menus::get_instance()->get_license()->check_license('sync_pull', WPSiteSync_Pull::PLUGIN_KEY, WPSiteSync_Pull::PLUGIN_NAME)) : ?>
+				<?php if (class_exists('WPSiteSync_Pull') && WPSiteSyncContent::get_instance()->get_license()->check_license('sync_pull', WPSiteSync_Pull::PLUGIN_KEY, WPSiteSync_Pull::PLUGIN_NAME)) : ?>
 					<button class="sync-menus-pull button button-secondary sync-button" type="button" title="<?php esc_html_e('Pull this Menu from the Target site', 'wpsitesync-menus'); ?>">
 						<span class="sync-button-icon sync-button-icon-rotate dashicons dashicons-migrate"></span>
 						<?php esc_html_e('Pull from Target', 'wpsitesync-menus'); ?>
@@ -104,8 +104,7 @@ class SyncMenusAdmin
 	{
 		SyncDebug::log(__METHOD__ . '() operation="' . $operation . '"');
 
-		$license = new SyncLicensing();
-		if (!$license->check_license('sync_menus', WPSiteSync_Menus::PLUGIN_KEY, WPSiteSync_Menus::PLUGIN_NAME))
+		if (!WPSiteSyncContent::get_instance()->get_license()->check_license('sync_menus', WPSiteSync_Menus::PLUGIN_KEY, WPSiteSync_Menus::PLUGIN_NAME))
 			return $found;
 
 		if ('pushmenu' === $operation) {
