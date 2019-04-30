@@ -34,9 +34,11 @@ class SyncMenusAjaxRequest
 	{
 		$input = new SyncInput();
 
+		$menu_id = $input->post_int('menu_id', 0);
 		$menu_name = $input->post('menu_name', 0);
+SyncDebug::log(__METHOD__.'():' . __LINE__ . ' menu id=' . $menu_id . ' menu name=' . $menu_name);
 
-		if (0 === $menu_name) {
+		if (0 === $menu_id || 0 === $menu_name) {
 			// No menu name. Return error message
 			WPSiteSync_Menus::get_instance()->load_class('menusapirequest');
 			$resp->error_code(SyncMenusApiRequest::ERROR_MENU_NOT_FOUND);
@@ -44,7 +46,10 @@ class SyncMenusAjaxRequest
 			return TRUE;		// return, signaling that we've handled the request
 		}
 
-		$args = array('menu_name' => $menu_name);
+		$args = array(
+			'menu_id' => $menu_id,
+			'menu_name' => $menu_name
+		);
 		$api = new SyncApiRequest();
 		$api_response = $api->api('pushmenu', $args);
 
@@ -65,7 +70,6 @@ SyncDebug::log(' - error code: ' . $api_response->get_error_code());
 
 	/**
 	 * Pull menu ajax request
-	 *
 	 * @since 1.0.0
 	 * @param SyncApiResponse $resp The response object after the API request has been made
 	 * @return void
@@ -74,9 +78,10 @@ SyncDebug::log(' - error code: ' . $api_response->get_error_code());
 	{
 		$input = new SyncInput();
 
+		$menu_id = $input->post_int('menu_id', 0);
 		$menu_name = $input->post('menu_name', 0);
 
-		if (0 === $menu_name) {
+		if (0 === $menu_id || 0 === $menu_name) {
 			// No menu name. Return error message
 			WPSiteSync_Menus::get_instance()->load_class('menusapirequest');
 			$resp->error_code(SyncMenusApiRequest::ERROR_TARGET_MENU_NOT_FOUND);
@@ -85,7 +90,10 @@ SyncDebug::log(' - error code: ' . $api_response->get_error_code());
 			return;
 		}
 
-		$args = array('menu_name' => $menu_name);
+		$args = array(
+			'menu_id' => $menu_id,
+			'menu_name' => $menu_name
+		);
 		$api = new SyncApiRequest();
 		$api_response = $api->api('pullmenu', $args);
 
