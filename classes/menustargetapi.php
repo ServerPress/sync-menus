@@ -194,6 +194,7 @@ SyncDebug::log(__METHOD__.'():' . __LINE__ . ' unexpected menu type: ' . $item->
 				}
 
 				if (NULL === $menu_entry) {
+SyncDebug::log(__METHOD__.'():' . __LINE__ . ' deleting menu entry');
 					// Target menu key not found...remove this item
 					wp_delete_post($item->db_id, TRUE);
 					// remove the item from the sync table
@@ -428,6 +429,8 @@ SyncDebug::log(__METHOD__.'():' . __LINE__ . ' menu item=' . var_export($item, T
 		$object_id = abs($item['object_id']);
 		$new_object_id = 0;
 		$parent_id = abs($item['menu_item_parent']);
+if (0 !== $parent_id)
+SyncDebug::log(__METHOD__.'():' . __LINE__ . ' this is a child menu entry');
 		$new_parent_id = $this->_get_mapped_db_id($parent_id);		// convert the Parent ID to that of the local system
 
 		if ('Custom Link' === $item['type_label']) {

@@ -23,8 +23,9 @@ if (!class_exists('WPSiteSync_Menus')) {
 		private static $_instance = NULL;
 
 		const PLUGIN_NAME = 'WPSiteSync for Menus';
-		const PLUGIN_VERSION = '1.4';
+		const PLUGIN_VERSION = '1.4';	#@#
 		const PLUGIN_KEY = '0b6c5007c058ade619bb0c81e6204ba3';
+		const REQUIRED_VERSION = '1.5.5';		 // minimum version of WPSiteSync required for this add-on to initialize #@#
 
 		private function __construct()
 		{
@@ -60,6 +61,7 @@ if (!class_exists('WPSiteSync_Menus')) {
 
 //			$api = $this->load_class('menusapirequest', TRUE);
 
+			// TODO: move into 'spectrom_sync_api_init' callback
 //			add_filter('spectrom_sync_api_request_action', array($api, 'api_request'), 20, 3); // called by SyncApiRequest
 			add_filter('spectrom_sync_api_request_action', array($this, 'source_api_request'), 20, 3);
 
@@ -126,7 +128,7 @@ if (!class_exists('WPSiteSync_Menus')) {
 		{
 			$target = $this->load_class('menustargetapi', TRUE);
 			$ret =  $target->api_request($return, $action, $response);
-SyncDebug::log(__METHOD__.'():' . __LINE__ . ' handled request: ' . var_export($ret, TRUE));
+//SyncDebug::log(__METHOD__.'():' . __LINE__ . ' handled request: ' . var_export($ret, TRUE));
 			return $ret;
 		}
 
