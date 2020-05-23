@@ -23,13 +23,15 @@ if (!class_exists('WPSiteSync_Menus')) {
 		private static $_instance = NULL;
 
 		const PLUGIN_NAME = 'WPSiteSync for Menus';
-		const PLUGIN_VERSION = '1.4';	#@#
+		const PLUGIN_VERSION = '1.4';
 		const PLUGIN_KEY = '0b6c5007c058ade619bb0c81e6204ba3';
-		const REQUIRED_VERSION = '1.5.5';		 // minimum version of WPSiteSync required for this add-on to initialize #@#
+		const REQUIRED_VERSION = '1.5.5';		 // minimum version of WPSiteSync required for this add-on to initialize
 
 		private function __construct()
 		{
 			add_action('spectrom_sync_init', array($this, 'init'));
+			if (is_admin())
+				add_action('wp_loaded', array($this, 'wp_loaded'));
 		}
 
 		/**
@@ -73,6 +75,51 @@ if (!class_exists('WPSiteSync_Menus')) {
 
 			add_filter('spectrom_sync_error_code_to_text', array($this, 'filter_error_codes'), 10, 3);
 			add_filter('spectrom_sync_notice_code_to_text', array($this, 'filter_notice_codes'), 10, 2);
+		}
+
+		/**
+		 * Called when WP is loaded so we can check if parent plugin is active.
+		 */
+		public function wp_loaded()
+		{
+			if (is_admin() && !class_exists('WPSiteSyncContent', FALSE) && current_user_can('activate_plugins')) {
+				add_action('admin_notices', array($this, 'notice_requires_wpss'));
+				add_action('admin_init', array($this, 'disable_plugin'));
+			}
+		}
+
+		/**
+		 * Displays the warning message stating that WPSiteSync is not present.
+		 */
+		public function notice_requires_wpss()
+		{
+			$install = admin_url('plugin-install.php?tab=search&s=wpsitesync');
+			$activate = admin_url('plugins.php');
+			$msg = sprintf(__('The <em>WPSiteSync for Menus</em> plugin requires the main <em>WPSiteSync for Content</em> plugin to be installed and activated. Please %1$sclick here</a> to install or %2$sclick here</a> to activate.', 'wpsitesync-menus'),
+						'<a href="' . $install . '">',
+						'<a href="' . $activate . '">');
+			$this->_show_notice($msg, 'notice-warning');
+		}
+
+		/**
+		 * Helper method to display notices
+		 * @param string $msg Message to display within notice
+		 * @param string $class The CSS class used on the <div> wrapping the notice
+		 * @param boolean $dismissable TRUE if message is to be dismissable; otherwise FALSE.
+		 */
+		private function _show_notice($msg, $class = 'notice-success', $dismissable = FALSE)
+		{
+			echo '<div class="notice ', $class, ' ', ($dismissable ? 'is-dismissible' : ''), '">';
+			echo '<p>', $msg, '</p>';
+			echo '</div>';
+		}
+
+		/**
+		 * Disables the plugin if WPSiteSync not installed
+		 */
+		public function disable_plugin()
+		{
+			deactivate_plugins(plugin_basename(__FILE__));
 		}
 
 		/**
