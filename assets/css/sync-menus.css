@@ -15,15 +15,18 @@
 	padding-right: 0;
 }
 
-.sync-menu-msgs {
+div.sync-menu-msgs {
 	margin: 0.5rem 2px 0.5rem 0;
 	background-color: white;
 	border: 1px solid #dddddd;
 	padding: 5px;
 	position: absolute;
-	top: 3.5em;
+	top: 5.5em;
 }
 
+div.sync-menu-msgs span.sync-message {
+	line-height: 1rem !important;
+}
 .sync-menu-msgs span.dashicons {
 	font-size: 90%;
 	margin-top: 3px;

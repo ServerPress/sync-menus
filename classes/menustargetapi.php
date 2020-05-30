@@ -6,6 +6,7 @@ class SyncMenusTargetApi
 	private $_target_menu_id = 0;							// the ID of the menu on the Target
 	private $_menu_name = NULL;								// the name of the menu being Pushed
 	private $_push_data = NULL;								// data array being assembled for API call
+	private $_response = NULL;								// SyncApiResponse instance passed to api_request()
 	private $is_pull = FALSE;								// TRUE for Pull operations; FALSE for Push
 	private $_site_key = NULL;								// source site key
 	private $_id_map = array();								// Source to Target db_id menu maps
@@ -27,6 +28,8 @@ SyncDebug::log(__METHOD__ . '():' . __LINE__ . " handling '{$action}' action");
 
 		if (!WPSiteSyncContent::get_instance()->get_license()->check_license('sync_menus', WPSiteSync_Menus::PLUGIN_KEY, WPSiteSync_Menus::PLUGIN_NAME))
 			return TRUE;
+
+		$this->_response = $response;
 
 		WPSiteSync_Menus::get_instance()->load_class('menusapirequest');
 
@@ -55,7 +58,7 @@ SyncDebug::log(__METHOD__.'():' . __LINE__ . ' processing menu id=' . $this->_me
 
 		// check api parameters. if these are 0 we've got bad data in the API request
 		if (0 === $this->_menu_id || 0 === $this->_menu_name) {
-			$response->error_code(SyncMenusApiRequest::ERROR_TARGET_MENU_NOT_FOUND);
+			$this->_response->error_code(SyncMenusApiRequest::ERROR_TARGET_MENU_NOT_FOUND);
 			return TRUE;            // return, signaling that the API request was processed
 		}
 
@@ -74,7 +77,7 @@ SyncDebug::log(__METHOD__.'():' . __LINE__ . ' is pull=' . ($this->is_pull ? 'TR
 SyncDebug::log(__METHOD__.'():' . __LINE__ . ' exist=' . var_export($post_items_exist, TRUE));
 		if (FALSE !== $post_items_exist) {
 SyncDebug::log(__METHOD__.'():' . __LINE__ . ' returning error response');
-			$response->error_code(SyncMenusApiRequest::ERROR_TARGET_MENU_ITEMS_NOT_FOUND, $post_items_exist);
+			$this->_response->error_code(SyncMenusApiRequest::ERROR_TARGET_MENU_ITEMS_NOT_FOUND, $post_items_exist);
 			return TRUE;            // return, signaling that the API request was processed
 		}
 
@@ -86,7 +89,7 @@ SyncDebug::log(__METHOD__.'():' . __LINE__ . ' returning error response');
 			$this->_target_menu_id = wp_create_nav_menu($this->_menu_name);
 			if (is_wp_error($this->_target_menu_id)) {
 SyncDebug::log(__METHOD__.'():' . __LINE__ . ' error creating menu ' . var_export($this->_target_menu_id, TRUE));
-				$response->error_code(SyncMenusApiRequest::ERROR_TARGET_MENU_CANNOT_CREATE);
+				$this->_response->error_code(SyncMenusApiRequest::ERROR_TARGET_MENU_CANNOT_CREATE);
 				return TRUE;
 			}
 
@@ -211,7 +214,7 @@ SyncDebug::log(__METHOD__.'():' . __LINE__ . ' adding map ' . $item->db_id . '=>
 
 					if (is_wp_error($item_id)) {
 SyncDebug::log(__METHOD__.'():' . __LINE__ . ' error returned from wp_update_nav_menu_item() ' . var_export($item_id, TRUE));
-						$response->error_code(SyncMenusApiRequest::ERROR_MENU_ITEM_NOT_MODIFIED);
+						$this->_response->error_code(SyncMenusApiRequest::ERROR_MENU_ITEM_NOT_MODIFIED);
 						return TRUE;            // return, signaling that the API request was processed
 					}
 SyncDebug::log(__METHOD__ . '() item updated: ' . $item->db_id);
@@ -263,7 +266,7 @@ SyncDebug::log(__METHOD__.'():' . __LINE__ . ' adding map ' . $menu_item['db_id'
 ////					update_post_meta($item_id, 'sync_menu_original_id', $this->_push_data['menu_items'][$menu_key]['db_id']);
 
 //					if (is_wp_error($item_id)) {
-//						$response->error_code(SyncMenusApiRequest::ERROR_MENU_ITEM_NOT_MODIFIED);
+//						$this->_response->error_code(SyncMenusApiRequest::ERROR_MENU_ITEM_NOT_MODIFIED);
 //						return TRUE;            // return, signaling that the API request was processed
 //					}
 //SyncDebug::log(__METHOD__ . '() item updated: ' . var_export($item_id, TRUE));
@@ -290,7 +293,7 @@ SyncDebug::log(__METHOD__.'():' . __LINE__ . ' adding map ' . $menu_item['db_id'
 ////					update_post_meta($item_id, 'sync_menu_original_id', $this->_push_data['menu_items'][$menu_key]['db_id']);
 
 //					if (is_wp_error($item_id)) {
-//						$response->error_code(SyncMenusApiRequest::ERROR_MENU_ITEM_NOT_ADDED);
+//						$this->_response->error_code(SyncMenusApiRequest::ERROR_MENU_ITEM_NOT_ADDED);
 //						return TRUE;            // return, signaling that the API request was processed
 //					}
 //SyncDebug::log(__METHOD__ . '():' . __LINE__ . ' item added: ' . var_export($item_id, TRUE));
@@ -322,7 +325,7 @@ SyncDebug::log(__METHOD__.'():' . __LINE__ . ' adding map ' . $menu_item['db_id'
 SyncDebug::log(__METHOD__.'():' . __LINE__ . ' adding map ' . $item['db_id'] . '=>' . $item_args['menu-item-object-id']);
 
 				if (is_wp_error($item_id)) {
-					$response->error_code(SyncMenusApiRequest::ERROR_MENU_ITEM_NOT_ADDED);
+					$this->_response->error_code(SyncMenusApiRequest::ERROR_MENU_ITEM_NOT_ADDED);
 					return TRUE;            // return, signaling that the API request was processed
 				}
 
@@ -393,9 +396,9 @@ SyncDebug::log(__METHOD__.'():' . __LINE__ . ' handling pull');
 			$pull_data['menu_locations'] = array_keys($menu_locations, $menu_id);
 		}
 
-		$response->set('pull_data', $pull_data); // add all the post information to the ApiResponse object
-		$response->set('site_key', SyncOptions::get('site_key'));
-SyncDebug::log(__METHOD__ . '():' . __LINE__ . ' - response data=' . var_export($response, TRUE));
+		$this->_response->set('pull_data', $pull_data); // add all the post information to the ApiResponse object
+		$this->_response->set('site_key', SyncOptions::get('site_key'));
+SyncDebug::log(__METHOD__ . '():' . __LINE__ . ' - response data=' . SyncDebug::arr_sanitize($this->_response));
 	}
 
 	/**

@@ -215,7 +215,12 @@ jQuery(document).ready(function() {
 			wpsitesynccontent.menus.set_message(jQuery('#sync-menu-msg-unsaved').html(), false, true);
 			return;
 		}
-		var menu_id = parseInt(jQuery('#select-menu-to-edit').val());
+		var menu_id = parseInt(jQuery('#menu').val());
+		if (isNaN(menu_id))
+			menu_id = parseInt(jQuery('#select-menu-to-edit').val());
+		if (isNaN(menu_id))
+			menu_id = 0;
+		// TODO: display error message if 0
 
 		if (jQuery(this).hasClass('button-disabled')) {
 			wpsitesynccontent.menus.set_message(jQuery('#sync-menu-msg-pull').html(), false, true);

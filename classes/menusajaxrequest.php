@@ -37,6 +37,7 @@ class SyncMenusAjaxRequest
 		$menu_id = $input->post_int('menu_id', 0);
 		$menu_name = $input->post('menu_name', 0);
 SyncDebug::log(__METHOD__.'():' . __LINE__ . ' menu id=' . $menu_id . ' menu name=' . $menu_name);
+//SyncDebug::log(__METHOD__.'():' . __LINE__ . ' POST=' . var_export($_POST, TRUE));
 
 		if (0 === $menu_id || 0 === $menu_name) {
 			// No menu name. Return error message
