@@ -1,0 +1,3 @@
+* enhancement: Update .htaccess rules for Apache 2.4.
+* enhancement: Check for presence of WPSiteSync and disable plugin if not present or not minimum required version.
+* enhancement: Update Menu Pull operation to use new SyncApiController initialization method.
